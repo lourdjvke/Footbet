@@ -88,6 +88,22 @@ export function useSportsData() {
     }
 
     const fetchRealData = async () => {
+      const API_KEY = "f29d4c662ac81ed3a744727739add7a4a55e655c566695265112a2c9527bb7fb";
+
+      const safeFetch = async (query: string) => {
+        // 1. Try proxy first
+        try {
+          const res = await fetch(`/api/football?${query}`);
+          if (res.ok) return await res.json();
+        } catch (e) {
+          // ignore
+        }
+        // 2. Fallback to direct API
+        const res = await fetch(`https://apiv3.apifootball.com/?${query}&APIkey=${API_KEY}`);
+        if (!res.ok) throw new Error(`API failed: ${res.status}`);
+        return await res.json();
+      };
+
       try {
         setLoading(true);
         setProgress(5);
@@ -115,8 +131,7 @@ export function useSportsData() {
         for (let i = 0; i < LEAGUES.length; i++) {
           const l = LEAGUES[i];
           try {
-             const res = await fetch(`/api/football?action=get_standings&league_id=${l.id}`);
-             const data = await res.json();
+             const data = await safeFetch(`action=get_standings&league_id=${l.id}`);
              
              if (Array.isArray(data)) {
                standingsMap[l.name] = data.map((t: any) => ({
@@ -141,10 +156,13 @@ export function useSportsData() {
         // Fetch matches (upcoming events for next month)
         let allMatchesData: any[] = [];
         for (const l of LEAGUES) {
-          const res = await fetch(`/api/football?action=get_events&from=${fromDate}&to=${toDate}&league_id=${l.id}`);
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            allMatchesData = [...allMatchesData, ...data];
+          try {
+            const data = await safeFetch(`action=get_events&from=${fromDate}&to=${toDate}&league_id=${l.id}`);
+            if (Array.isArray(data)) {
+              allMatchesData = [...allMatchesData, ...data];
+            }
+          } catch (e) {
+            // ignore
           }
           if (allMatchesData.length > 20) break;
         }
@@ -183,12 +201,10 @@ export function useSportsData() {
         // Fetch detailed stats and lineups for the picked "main/live" match
         if (live && live.id) {
            try {
-              const [resStats, resLineups] = await Promise.all([
-                 fetch(`/api/football?action=get_statistics&match_id=${live.id}`),
-                 fetch(`/api/football?action=get_lineups&match_id=${live.id}`)
+              const [statsData, lineupsData] = await Promise.all([
+                 safeFetch(`action=get_statistics&match_id=${live.id}`),
+                 safeFetch(`action=get_lineups&match_id=${live.id}`)
               ]);
-              const statsData = await resStats.json();
-              const lineupsData = await resLineups.json();
               
               if (statsData && statsData[live.id]) {
                  live.statistics = statsData[live.id].statistics;
@@ -215,8 +231,7 @@ export function useSportsData() {
         };
 
         try {
-           const resScorers = await fetch(`/api/football?action=get_topscorers&league_id=${LEAGUES[0].id}`);
-           const scorersData = await resScorers.json();
+           const scorersData = await safeFetch(`action=get_topscorers&league_id=${LEAGUES[0].id}`);
            if (Array.isArray(scorersData) && scorersData.length > 0) {
               const top = scorersData[0];
               newMvp = {

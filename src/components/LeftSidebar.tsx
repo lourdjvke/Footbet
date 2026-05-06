@@ -88,7 +88,7 @@ export function LeftSidebar() {
 
         <div className="flex flex-col gap-4 mt-6">
           {standings.slice(0, 2).map((team) => (
-             <ProbabilityRow key={team.id} name={team.name} flag={team.badge} percent={team.probability} trend="up" />
+             <ProbabilityRow key={team.id} name={team.name} flag={team.badge} percent={Math.round(team.probability)} trend="up" />
           ))}
           {standings.length === 0 && (
              <div className="text-center text-text-muted text-sm py-4">No data</div>

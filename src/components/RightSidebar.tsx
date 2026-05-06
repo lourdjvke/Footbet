@@ -222,6 +222,7 @@ function Tab({ label, active, onClick }: { label: string, active?: boolean, onCl
 }
 
 interface StatBarProps {
+   key?: string;
    label: string;
    left: number;
    right: number;
