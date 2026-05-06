@@ -95,7 +95,7 @@ export function useSportsData() {
         const LEAGUES = [
           { id: '152', name: 'Premier League' },
           { id: '175', name: 'Bundesliga' },
-          { id: '235', name: 'Eredivisie' },
+          { id: '244', name: 'Eredivisie' },
           { id: '3',   name: 'Champions League' }
         ];
 
@@ -129,7 +129,7 @@ export function useSportsData() {
                   drawn: Number(t.overall_league_D),
                   lost: Number(t.overall_league_L),
                   points: Number(t.overall_league_PTS),
-                  probability: Math.round(50 + (Math.random() * 40)) // Round probability to avoid long decimals
+                  probability: Math.floor(50 + (Math.random() * 40)) // Integer probability
                }));
              }
           } catch (e) {

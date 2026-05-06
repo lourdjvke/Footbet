@@ -101,10 +101,10 @@ export function CenterFeed() {
                         <img src={team.badge} alt={team.name} className="w-6 h-6 rounded-full object-cover border border-white/10 shrink-0 bg-white/10" />
                         <span className="text-sm font-medium truncate">{team.name}</span>
                      </div>
-                     <div className="flex items-center gap-3 text-sm shrink-0">
-                        <span className="text-white font-medium w-8 text-right">{team.points} pts</span>
-                        <span className="text-text-muted w-[1px] h-3 bg-white/20 mx-1" />
-                        <span className="font-semibold text-right w-8 text-blue-400">{Math.round(team.probability)}%</span>
+                     <div className="flex items-center gap-2 text-sm shrink-0 ml-2">
+                        <span className="text-white font-medium whitespace-nowrap">{team.points} <span className="text-[10px] text-text-muted">pts</span></span>
+                        <span className="text-text-muted w-[1px] h-3 bg-white/20" />
+                        <span className="font-semibold text-right w-10 text-blue-400">{Math.round(team.probability)}%</span>
                      </div>
                   </div>
                ))}
