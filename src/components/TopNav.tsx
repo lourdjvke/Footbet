@@ -2,28 +2,46 @@ import React from "react";
 import { Bell, Calendar, Home, Search, Settings, Trophy, Users, Activity, BarChart2, Maximize2, Menu } from "lucide-react";
 import { cn } from "../lib/utils";
 
-export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
+import { RotatingWorldCupIcon } from "./RotatingWorldCupIcon";
+
+export function TopNav({ 
+  onMenuClick, 
+  currentPage, 
+  onNavigate 
+}: { 
+  onMenuClick?: () => void;
+  currentPage?: string;
+  onNavigate?: (page: string) => void;
+}) {
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/20 backdrop-blur-md">
+    <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-dark-card">
       {/* Brand */}
       <div className="flex items-center gap-3">
         <button onClick={onMenuClick} className="lg:hidden p-1 mr-1 text-text-muted hover:text-white transition-colors">
            <Menu className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-          <Trophy className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
+          <RotatingWorldCupIcon className="w-full h-full object-cover" />
         </div>
         <span className="font-semibold text-lg tracking-tight">Footbet</span>
       </div>
 
       {/* Main Nav Pills */}
       <nav className="hidden md:flex items-center gap-2 bg-white/5 rounded-full p-1 border border-white/10">
-        <NavItem active icon={<Users className="w-4 h-4" />} label="Room" />
+        <NavItem 
+          active={currentPage === "dashboard"} 
+          icon={<Home className="w-4 h-4" />} 
+          label="Dashboard" 
+          onClick={() => onNavigate?.("dashboard")}
+        />
+        <NavItem 
+          active={currentPage === "world-cup"} 
+          icon={<RotatingWorldCupIcon className="w-4 h-4 rounded-full object-cover" />} 
+          label="World Cup" 
+          onClick={() => onNavigate?.("world-cup")}
+        />
+        <NavItem icon={<Users className="w-4 h-4" />} label="Room" />
         <NavItem icon={<Settings className="w-4 h-4" />} />
-        <NavItem icon={<BarChart2 className="w-4 h-4" />} />
-        <NavItem icon={<Trophy className="w-4 h-4" />} />
-        <NavItem icon={<Activity className="w-4 h-4" />} />
-        <NavItem icon={<Calendar className="w-4 h-4" />} />
       </nav>
 
       {/* Live / Match Toggle */}
@@ -77,12 +95,15 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   );
 }
 
-function NavItem({ active, icon, label }: { active?: boolean, icon: React.ReactNode, label?: string }) {
+function NavItem({ active, icon, label, onClick }: { active?: boolean, icon: React.ReactNode, label?: string, onClick?: () => void }) {
   return (
-    <button className={cn(
-      "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-      active ? "bg-primary-blue/20 text-blue-400" : "text-text-muted hover:text-white hover:bg-white/10"
-    )}>
+    <button 
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+        active ? "bg-primary-blue/20 text-blue-400" : "text-text-muted hover:text-white hover:bg-white/10"
+      )}
+    >
       {icon}
       {label && <span>{label}</span>}
     </button>

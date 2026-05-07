@@ -1,0 +1,156 @@
+{
+    "events": [
+        {
+            "eventState": {},
+            "tournament": {
+                "name": "UEFA Champions League, Knockout stage",
+                "slug": "uefa-champions-league-knockout-stage",
+                "category": {
+                    "name": "Europe",
+                    "slug": "europe"
+                },
+                "uniqueTournament": {
+                    "name": "UEFA Champions League"
+                }
+            },
+            "status": {
+                "code": 6,
+                "description": "1st half",
+                "type": "inprogress"
+            },
+            "homeTeam": {
+                "id": 2672,
+                "name": "FC Bayern München",
+                "shortName": "Bayern",
+                "teamColors": {
+                    "primary": "#cf142f",
+                    "secondary": "#ffffff",
+                    "text": "#ffffff"
+                }
+            },
+            "awayTeam": {
+                "id": 1644,
+                "name": "Paris Saint-Germain",
+                "shortName": "PSG",
+                "teamColors": {
+                    "primary": "#000066",
+                    "secondary": "#ff1541",
+                    "text": "#ff1541"
+                }
+            },
+            "homeScore": {
+                "current": 0,
+                "display": 0
+            },
+            "awayScore": {
+                "current": 1,
+                "display": 1
+            },
+            "time": {
+                "currentPeriodStartTimestamp": 1778094131
+            },
+            "id": 15632634,
+            "startTimestamp": 1778094000
+        },
+        {
+            "eventState": {},
+            "tournament": {
+                "name": "Saudi Pro League",
+                "category": {
+                    "name": "Saudi Arabia"
+                },
+                "uniqueTournament": {
+                    "name": "Saudi Pro League"
+                }
+            },
+            "status": {
+                "code": 7,
+                "description": "2nd half",
+                "type": "inprogress"
+            },
+            "homeTeam": {
+                "id": 34469,
+                "name": "Al-Ahli",
+                "shortName": "Al-Ahli",
+                "teamColors": {
+                    "primary": "#339900",
+                    "secondary": "#ffffff",
+                    "text": "#ffffff"
+                }
+            },
+            "awayTeam": {
+                "id": 56023,
+                "name": "Al-Fateh",
+                "shortName": "Al-Fateh",
+                "teamColors": {
+                    "primary": "#0084c8",
+                    "secondary": "#ffffff",
+                    "text": "#ffffff"
+                }
+            },
+            "homeScore": {
+                "current": 1,
+                "display": 1
+            },
+            "awayScore": {
+                "current": 0,
+                "display": 0
+            },
+            "time": {
+                "currentPeriodStartTimestamp": 1778094586
+            },
+            "id": 16017540,
+            "startTimestamp": 1778090400
+        },
+        {
+            "eventState": {},
+            "tournament": {
+                "name": "Women's Super League",
+                "category": {
+                    "name": "England"
+                },
+                "uniqueTournament": {
+                    "name": "Women's Super League"
+                }
+            },
+            "status": {
+                "code": 6,
+                "description": "1st half",
+                "type": "inprogress"
+            },
+            "homeTeam": {
+                "id": 266376,
+                "name": "Brighton",
+                "shortName": "Brighton",
+                "teamColors": {
+                    "primary": "#0054a6",
+                    "secondary": "#ffffff",
+                    "text": "#ffffff"
+                }
+            },
+            "awayTeam": {
+                "id": 26243,
+                "name": "Arsenal",
+                "shortName": "Arsenal",
+                "teamColors": {
+                    "primary": "#cc0000",
+                    "secondary": "#ffffff",
+                    "text": "#ffffff"
+                }
+            },
+            "homeScore": {
+                "current": 0,
+                "display": 0
+            },
+            "awayScore": {
+                "current": 0,
+                "display": 0
+            },
+            "time": {
+                "currentPeriodStartTimestamp": 1778093122
+            },
+            "id": 15648857,
+            "startTimestamp": 1778093100
+        }
+    ]
+}

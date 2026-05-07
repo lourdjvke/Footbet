@@ -1,24 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-dark-bg: #141416;
-  --color-dark-card: #222224;
-  --color-dark-card-hover: #2a2a2d;
-  --color-dark-border: #333336;
+  --font-display: "Outfit", sans-serif;
+  --color-dark-bg: #111112;
+  --color-dark-card: #1c1c1e;
+  --color-dark-card-hover: #222224;
+  --color-dark-border: #2a2a2d;
   --color-primary-blue: #3b82f6;
-  --color-text-muted: #9ca3af;
+  --color-text-muted: #94a3b8;
 }
 
 @layer base {
   body {
     @apply bg-dark-bg text-white font-sans antialiased overflow-x-hidden;
-    /* Optional realistic dark stadium background fade */
-    background-image: radial-gradient(circle at 50% 0%, rgba(20, 20, 30, 0.8), #141416 60%), url('https://images.unsplash.com/photo-1518605368461-1e1e38ce8ba8?q=80&w=2070&auto=format&fit=crop');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
   }
 }
 
@@ -31,6 +27,6 @@
     scrollbar-width: none;  /* Firefox */
   }
   .glass-card {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+    @apply bg-[#1c1c1e] border border-white/5 rounded-2xl;
   }
 }

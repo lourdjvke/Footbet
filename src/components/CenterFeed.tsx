@@ -1,29 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSportsData } from "../lib/useSportsData";
+import { motion, AnimatePresence } from "motion/react";
+
+const HERO_IMAGES = [
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLcUUDQLJDCjUrO4a3bv-ZOJB6GGBRjgufSgeRQmEgjJ_38RUwoB8W8RU&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsaOHXJoqyoUdqgskosRu9nvCSajeQf3OdJxPBKKRtmm4AAESb_8o49xKg&s=10",
+  "https://www.mancity.com/meta/media/guwnl2xg/liverpool-opta-a-lead.jpg"
+];
 
 export function CenterFeed() {
-  const { upcomingMatches, allStandings, heroImage } = useSportsData();
+  const { upcomingMatches, allStandings } = useSportsData();
   const [activeGroup, setActiveGroup] = useState("Premier League");
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentHeroIndex(prev => (prev + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const standings = allStandings && allStandings[activeGroup] ? allStandings[activeGroup] : (allStandings ? Object.values(allStandings)[0] || [] : []);
 
   return (
     <div className="flex-1 flex flex-col gap-6 min-w-0">
       
-      {/* Hero Image Section */}
+      {/* Hero Image Section Slider */}
       <div className="relative w-full h-[320px] rounded-2xl overflow-hidden glass-card group border border-white/10">
-        <img 
-          src={heroImage} 
-          alt="Featured Match Hero" 
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#141416] via-black/40 to-transparent" />
+        <AnimatePresence mode="wait">
+          <motion.img 
+            key={HERO_IMAGES[currentHeroIndex]}
+            src={HERO_IMAGES[currentHeroIndex]} 
+            alt="Featured Match Hero" 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-black/60" />
         
-        {/* Pagination Dots mocked at bottom */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-           <div className="w-1.5 h-1.5 rounded-full bg-white transition-opacity" />
-           <div className="w-1.5 h-1.5 rounded-full bg-white/40 mix-blend-overlay cursor-pointer hover:bg-white" />
-           <div className="w-1.5 h-1.5 rounded-full bg-white/40 mix-blend-overlay cursor-pointer hover:bg-white" />
+        {/* Pagination Dots */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+           {HERO_IMAGES.map((_, idx) => (
+             <div 
+               key={idx}
+               onClick={() => setCurrentHeroIndex(idx)}
+               className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${idx === currentHeroIndex ? "bg-blue-500 w-4" : "bg-white/40 hover:bg-white"}`} 
+             />
+           ))}
         </div>
       </div>
 
@@ -61,12 +87,30 @@ export function CenterFeed() {
               <div key={match.id} className="relative overflow-hidden rounded-xl bg-white/5 border border-white/10 p-4 mb-4 last:mb-0">
                  <div className="flex items-center justify-between mb-4">
                     <div className="flex flex-col items-center gap-2 w-16">
-                       <img src={match.homeTeam?.badge} alt={match.homeTeam?.name} className="w-12 h-12 rounded-full object-cover bg-white/10 p-1" />
+                       <div 
+                          className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center p-0.5 border border-white/20"
+                          style={{ backgroundColor: match.homeTeam?.teamColors?.primary || 'rgba(255,255,255,0.1)' }}
+                       >
+                          {match.homeTeam?.country?.alpha2 ? (
+                             <img src={`https://flagcdn.com/${match.homeTeam.country.alpha2.toLowerCase()}.svg`} alt={match.homeTeam?.name} className="w-full h-full object-cover scale-110" />
+                          ) : (
+                             <img src={match.homeTeam?.badge} alt={match.homeTeam?.name} className="w-10 h-10 object-contain" />
+                          )}
+                       </div>
                        <span className="text-xs font-semibold text-center leading-tight truncate w-full">{match.homeTeam?.shortName}</span>
                     </div>
                     <span className="text-xl font-bold text-white/50 flex-shrink-0 mx-2">VS</span>
                     <div className="flex flex-col items-center gap-2 w-16">
-                       <img src={match.awayTeam?.badge} alt={match.awayTeam?.name} className="w-12 h-12 rounded-full object-cover bg-white/10 p-1" />
+                       <div 
+                          className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center p-0.5 border border-white/20"
+                          style={{ backgroundColor: match.awayTeam?.teamColors?.primary || 'rgba(255,255,255,0.1)' }}
+                       >
+                          {match.awayTeam?.country?.alpha2 ? (
+                             <img src={`https://flagcdn.com/${match.awayTeam.country.alpha2.toLowerCase()}.svg`} alt={match.awayTeam?.name} className="w-full h-full object-cover scale-110" />
+                          ) : (
+                             <img src={match.awayTeam?.badge} alt={match.awayTeam?.name} className="w-10 h-10 object-contain" />
+                          )}
+                       </div>
                        <span className="text-xs font-semibold text-center leading-tight truncate w-full">{match.awayTeam?.shortName}</span>
                     </div>
                  </div>

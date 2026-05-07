@@ -37,15 +37,13 @@ export function LeftSidebar() {
             </div>
           </div>
           <div className="relative z-10 flex flex-col items-center justify-center">
-             <div className="w-14 h-14 rounded-full border-2 border-orange-500/30 overflow-hidden bg-black/20 p-0.5 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+             <div className="w-14 h-14 rounded-full border-2 border-orange-500/30 overflow-hidden bg-black/20 p-0.5">
                 <img src={mvp.image} alt={mvp.name} className="w-full h-full object-cover rounded-full" />
              </div>
              <div className="bg-orange-500 text-[10px] font-bold text-white px-2 py-0.5 rounded-full -mt-2 relative z-10">
                 {mvp.score}
              </div>
           </div>
-          {/* Subtle background glow effect */}
-          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-orange-500/20 blur-2xl rounded-full pointer-events-none" />
         </div>
 
         {/* Stats Grid */}

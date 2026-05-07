@@ -1,12 +1,113 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSportsData } from "../lib/useSportsData";
-import { Maximize2, MoreHorizontal } from "lucide-react";
+import { Maximize2, ChevronLeft, ChevronRight, RefreshCw, Copy, Check } from "lucide-react";
 import { cn } from "../lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 export function RightSidebar() {
-  const { liveMatch, allStandings } = useSportsData();
+  const { allLiveMatches, allStandings, refreshing, liveMatchesLoading, refresh } = useSportsData();
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("Lineup");
   const [activeGroup, setActiveGroup] = useState("Premier League");
+  const [lineup, setLineup] = useState<any>(null);
+  const [loadingLineup, setLoadingLineup] = useState(false);
+  const [lineupError, setLineupError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const liveMatch = allLiveMatches[currentMatchIndex] || allLiveMatches[0];
+
+  const copyId = () => {
+    if (liveMatch?.id) {
+       navigator.clipboard.writeText(liveMatch.id);
+       setCopied(true);
+       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  useEffect(() => {
+    // Reset index if matches decrease
+    if (currentMatchIndex >= allLiveMatches.length && allLiveMatches.length > 0) {
+      setCurrentMatchIndex(0);
+    }
+  }, [allLiveMatches.length, currentMatchIndex]);
+
+  useEffect(() => {
+    if (activeTab === "Lineup" && liveMatch && liveMatch.id) {
+       // Only try to fetch lineups for Sofascore matches
+       if (!liveMatch.isSofascore) {
+           setLineupError("Lineup not available for match");
+           setLoadingLineup(false);
+           return;
+       }
+
+       setLineup(null);
+       setLineupError(null);
+       setLoadingLineup(true);
+       
+       console.log(`Fetching lineup for match ID: ${liveMatch.id}`);
+       
+       fetch(`/api/lineups/${liveMatch.id}`)
+        .then(async r => {
+            const data = await r.json();
+            if (!r.ok) {
+                const errorStr = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+                console.error("EXACT ERROR FROM API:", data);
+                throw new Error(errorStr);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.error) {
+              const errorStr = typeof data.error === 'object' ? JSON.stringify(data.error, null, 2) : String(data.error);
+              console.error("EXACT ERROR FROM API:", data);
+              setLineupError(errorStr);
+            } else {
+              setLineup(data);
+            }
+            setLoadingLineup(false);
+        })
+        .catch(e => {
+            console.error("Lineup Fetch Error:", e);
+            setLineupError(e.message);
+            setLoadingLineup(false);
+        });
+    }
+  }, [activeTab, liveMatch?.id]);
+
+  if (!liveMatch) {
+    return (
+      <div className="flex flex-col gap-6 w-full lg:w-[320px] xl:w-[360px] shrink-0">
+        <div className="glass-card p-5 group min-h-[200px] flex flex-col items-center justify-center relative overflow-hidden">
+          <h2 className="text-lg font-medium absolute top-5 left-5">Live Matches</h2>
+          
+          {liveMatchesLoading ? (
+             <div className="flex flex-col items-center gap-3">
+                <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+                <span className="text-sm text-text-muted">Fetching live matches...</span>
+             </div>
+          ) : (
+             <div className="flex flex-col items-center gap-4">
+                <div className="text-center text-text-muted italic text-sm">No live matches available</div>
+                <button 
+                   onClick={() => refresh?.()}
+                   className="flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white transition-colors"
+                >
+                   REFRESH <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+             </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const nextMatch = () => {
+    setCurrentMatchIndex((prev) => (prev + 1) % allLiveMatches.length);
+  };
+
+  const prevMatch = () => {
+    setCurrentMatchIndex((prev) => (prev - 1 + allLiveMatches.length) % allLiveMatches.length);
+  };
 
   const standings = allStandings && allStandings[activeGroup] ? allStandings[activeGroup] : (allStandings ? Object.values(allStandings)[0] || [] : []);
 
@@ -15,40 +116,104 @@ export function RightSidebar() {
       
       {/* Live Matches */}
       <div className="glass-card p-5 relative overflow-hidden group">
-         <div className="absolute top-4 right-4 text-text-muted hover:text-white cursor-pointer bg-white/5 p-1.5 rounded-full z-10 transition-colors">
-            <Maximize2 className="w-4 h-4" />
-         </div>
+         <button 
+            onClick={copyId}
+            className="absolute top-4 right-4 py-1.5 px-2.5 rounded-lg bg-black/40 border border-white/5 z-20 group/copy active:scale-95 transition-all"
+         >
+            <div className="flex items-center gap-1.5">
+               <span className="text-[9px] font-bold text-white/40 group-hover/copy:text-white/70 transition-colors uppercase tracking-tight">
+                  {copied ? "Copied" : `MTH ID: ${liveMatch.id.substring(0, 8)}`}
+               </span>
+               {copied ? <Check className="w-2.5 h-2.5 text-green-400" /> : <Copy className="w-2.5 h-2.5 text-white/20 group-hover/copy:text-white/50" />}
+            </div>
+         </button>
 
-         <h2 className="text-lg font-medium mb-1">Live Matches</h2>
+         <div className="flex items-center justify-between mb-1">
+            <h2 className="text-lg font-medium">Live Matches</h2>
+            {refreshing && (
+               <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/5 mr-16">
+                  <RefreshCw className="w-3 h-3 text-white/40 animate-spin" />
+               </div>
+            )}
+         </div>
          <p className="text-sm border-white/20 pb-4 mb-4 font-medium flex flex-col items-center justify-center text-white/80 border-b border-dashed">
             <span>First Stage <span className="text-white/40 mx-2">•</span> {activeGroup}</span>
             <span className="text-xs text-text-muted mt-1 font-normal">{liveMatch.stadium}</span>
          </p>
 
          {/* Match Score */}
-         <div className="flex items-center justify-between px-2 mb-6">
-            <div className="flex flex-col items-center gap-2 relative w-20">
-               <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                 <img src={liveMatch.homeTeam?.badge} alt={liveMatch.homeTeam?.name} className="w-12 h-12 object-cover rounded-sm" />
-               </div>
-               <span className="text-sm font-semibold text-center truncate w-full">{liveMatch.homeTeam?.shortName}</span>
-            </div>
+         <div className="flex items-center justify-between px-2 mb-6 relative">
+            {allLiveMatches.length > 1 && (
+               <>
+                 <button 
+                   onClick={prevMatch}
+                   className="absolute left-0 lg:-left-2 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 p-2 rounded-full text-white hover:text-blue-400 transition-all border border-white/10"
+                 >
+                   <ChevronLeft className="w-4 h-4" />
+                 </button>
+                 <button 
+                   onClick={nextMatch}
+                   className="absolute right-0 lg:-right-2 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 p-2 rounded-full text-white hover:text-blue-400 transition-all border border-white/10"
+                 >
+                   <ChevronRight className="w-4 h-4" />
+                 </button>
+               </>
+            )}
+            
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key={liveMatch.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex items-center justify-between w-full"
+              >
+                <div className="flex flex-col items-center gap-2 relative w-20">
+                   <div 
+                     className="w-16 h-16 rounded-full overflow-hidden border border-white/20 flex items-center justify-center p-0.5"
+                     style={{ backgroundColor: liveMatch.homeTeam?.teamColors?.primary || 'rgba(255,255,255,0.05)' }}
+                   >
+                     {liveMatch.homeTeam?.country?.alpha2 ? (
+                       <img 
+                         src={`https://flagcdn.com/${liveMatch.homeTeam.country.alpha2.toLowerCase()}.svg`} 
+                         alt={liveMatch.homeTeam?.name} 
+                         className="w-full h-full object-cover scale-110" 
+                       />
+                     ) : (
+                       <img src={liveMatch.homeTeam?.badge} alt={liveMatch.homeTeam?.name} className="w-12 h-12 object-contain rounded-sm" />
+                     )}
+                   </div>
+                   <span className="text-sm font-semibold text-center truncate w-full">{liveMatch.homeTeam?.shortName}</span>
+                </div>
 
-            <div className="flex flex-col items-center justify-center -mt-6">
-               <div className="text-3xl font-bold tracking-widest text-white">
-                 {liveMatch.homeScore} - {liveMatch.awayScore}
-               </div>
-               <div className="px-3 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-semibold mt-1 border border-green-500/30">
-                  {liveMatch.minute}:02
-               </div>
-            </div>
+                <div className="flex flex-col items-center justify-center -mt-6">
+                   <div className="text-3xl font-bold tracking-widest text-white">
+                     {liveMatch.homeScore} - {liveMatch.awayScore}
+                   </div>
+                   <div className="px-3 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px] uppercase font-bold mt-1.5 border border-green-500/20 tracking-wider">
+                      {liveMatch.statusDescription || (liveMatch.minute ? `${liveMatch.minute}'` : 'Live')}
+                   </div>
+                </div>
 
-            <div className="flex flex-col items-center gap-2 relative w-20">
-               <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                 <img src={liveMatch.awayTeam?.badge} alt={liveMatch.awayTeam?.name} className="w-12 h-12 object-cover rounded-sm" />
-               </div>
-               <span className="text-sm font-semibold text-center truncate w-full">{liveMatch.awayTeam?.shortName}</span>
-            </div>
+                <div className="flex flex-col items-center gap-2 relative w-20">
+                   <div 
+                     className="w-16 h-16 rounded-full overflow-hidden border border-white/20 flex items-center justify-center p-0.5"
+                     style={{ backgroundColor: liveMatch.awayTeam?.teamColors?.primary || 'rgba(255,255,255,0.05)' }}
+                   >
+                     {liveMatch.awayTeam?.country?.alpha2 ? (
+                       <img 
+                         src={`https://flagcdn.com/${liveMatch.awayTeam.country.alpha2.toLowerCase()}.svg`} 
+                         alt={liveMatch.awayTeam?.name} 
+                         className="w-full h-full object-cover scale-110" 
+                       />
+                     ) : (
+                       <img src={liveMatch.awayTeam?.badge} alt={liveMatch.awayTeam?.name} className="w-12 h-12 object-contain rounded-sm" />
+                     )}
+                   </div>
+                   <span className="text-sm font-semibold text-center truncate w-full">{liveMatch.awayTeam?.shortName}</span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
          </div>
 
          {/* Dynamic Tabs Content */}
@@ -83,28 +248,45 @@ export function RightSidebar() {
                    <div className="flex justify-between items-center text-xs px-2">
                       <div className="flex flex-col items-start gap-1">
                          <span className="text-[10px] text-text-muted uppercase">System</span>
-                         <span className="font-bold text-blue-400">{liveMatch.lineup?.home?.coach?.[0]?.lineup_player || "4-3-3"}</span>
+                         <span className="font-bold text-blue-400">{liveMatch.homeSystem || "4-3-3"}</span>
                       </div>
                       <div className="w-[1px] h-6 bg-white/10" />
                       <div className="flex flex-col items-end gap-1">
                          <span className="text-[10px] text-text-muted uppercase">System</span>
-                         <span className="font-bold text-orange-400">{liveMatch.lineup?.away?.coach?.[0]?.lineup_player || "4-2-3-1"}</span>
+                         <span className="font-bold text-orange-400">{liveMatch.awaySystem || "4-2-3-1"}</span>
                       </div>
                    </div>
-                   <div className="flex flex-col gap-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
-                      {liveMatch.lineup?.home?.starting_lineups?.slice(0, 5).map((p: any, idx: number) => (
-                         <div key={p.player_key} className="flex items-center justify-between text-[11px]">
-                            <div className="flex items-center gap-2">
-                               <span className="text-blue-400 font-mono w-4">{p.lineup_number}</span>
-                               <span className="text-white/80">{p.lineup_player}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <span className="text-white/80">{liveMatch.lineup?.away?.starting_lineups?.[idx]?.lineup_player}</span>
-                               <span className="text-orange-400 font-mono w-4 text-right">{liveMatch.lineup?.away?.starting_lineups?.[idx]?.lineup_number}</span>
-                            </div>
+                   <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                      {loadingLineup ? (
+                         <div className="text-center text-text-muted py-4 flex flex-col items-center gap-2">
+                           <div className="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                           <span>Loading Lineups...</span>
                          </div>
-                      ))}
-                      {(!liveMatch.lineup) && (
+                      ) : lineupError ? (
+                          <div className="text-center py-8">
+                             <div className="text-text-muted text-xs italic">Lineup not available for match</div>
+                          </div>
+                      ) : lineup && lineup.home && lineup.home.players ? (
+                         lineup.home.players.slice(0, 5).map((p: any, idx: number) => (
+                            <div key={p.player.id} className="flex items-center justify-between text-[11px]">
+                               <div className="flex items-center gap-2">
+                                  <span className="text-blue-400 font-mono w-4">{p.shirtNumber}</span>
+                                  <span className="text-white/80">{p.player.shortName}</span>
+                               </div>
+                               <div className="flex items-center gap-2">
+                                  <span className="text-white/80">{lineup.away?.players?.[idx]?.player?.shortName || '-'}</span>
+                                  <span className="text-orange-400 font-mono w-4 text-right">{lineup.away?.players?.[idx]?.shirtNumber || '-'}</span>
+                               </div>
+                            </div>
+                         ))
+                      ) : lineup ? (
+                         <div className="text-center py-4">
+                            <div className="text-orange-400 text-[10px] mb-1 font-bold uppercase">Unexpected Data Format</div>
+                            <pre className="text-[8px] text-white/30 text-left overflow-x-auto p-2 bg-black/20 rounded">
+                               {JSON.stringify(lineup, null, 2).substring(0, 300)}...
+                            </pre>
+                         </div>
+                      ) : (
                          <div className="text-center text-text-muted italic py-4">Lineups pending confirmation</div>
                       )}
                    </div>
@@ -139,20 +321,33 @@ export function RightSidebar() {
          </div>
 
          {/* Tabs */}
-         <div className="flex items-center justify-between mb-5 bg-black/20 p-1 rounded-full border border-white/5">
+         <div className="flex items-center justify-between mb-4 bg-black/20 p-1 rounded-full border border-white/5">
             <Tab label="Timeline" active={activeTab === "Timeline"} onClick={() => setActiveTab("Timeline")} />
             <Tab label="Lineup" active={activeTab === "Lineup"} onClick={() => setActiveTab("Lineup")} />
-            <Tab label="Statistics" active={activeTab === "Statistics"} onClick={() => setActiveTab("Statistics")} />
+            <Tab label="Stats" active={activeTab === "Statistics"} onClick={() => setActiveTab("Statistics")} />
             <Tab label="Insights" active={activeTab === "Insights"} onClick={() => setActiveTab("Insights")} />
          </div>
 
+         {allLiveMatches.length > 1 && (
+           <div className="flex justify-center gap-1.5 mb-4">
+             {allLiveMatches.map((_, i) => (
+               <div 
+                 key={i} 
+                 className={cn(
+                   "w-1 h-1 rounded-full transition-all duration-300",
+                   i === currentMatchIndex ? "bg-blue-500 w-3" : "bg-white/10"
+                 )} 
+               />
+             ))}
+           </div>
+         )}
+
          {/* Watch Button */}
-         <button className="w-full relative overflow-hidden rounded-xl bg-blue-600 text-white font-semibold py-3.5 transition-all hover:bg-blue-500 active:scale-[0.98]">
+          <button className="w-full relative overflow-hidden rounded-xl bg-blue-600 text-white font-semibold py-3.5 transition-all hover:bg-blue-500 active:scale-[0.98]">
             <div className="relative z-10 flex items-center justify-center gap-2">
               <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
               Watch Now
             </div>
-            <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(0deg,transparent,transparent_4px,rgba(0,0,0,0.1)_4px,rgba(0,0,0,0.1)_8px)]" />
          </button>
       </div>
 
@@ -214,7 +409,7 @@ function Tab({ label, active, onClick }: { label: string, active?: boolean, onCl
          onClick={onClick}
          className={cn(
          "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex-1 text-center",
-         active ? "bg-orange-500/20 text-orange-400 border border-orange-500/10 shadow-[0_0_10px_rgba(249,115,22,0.1)]" : "text-text-muted hover:text-white hover:bg-white/5"
+         active ? "bg-orange-500/20 text-orange-400 border border-orange-500/10" : "text-text-muted hover:text-white hover:bg-white/5"
       )}>
          {label}
       </button>
