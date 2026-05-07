@@ -51,13 +51,26 @@ async function fetchWithCacheAndProxy(
     fallback?: () => Promise<any>
 ) {
   const cacheRef = ref(rtdb, cachePath);
+  const settingsRef = ref(rtdb, "settings/isLiveFetchingEnabled");
+  
+  let isLiveEnabled = true;
+  try {
+    const settingsSnap = await get(settingsRef);
+    if (settingsSnap.exists()) {
+      isLiveEnabled = settingsSnap.val();
+    }
+  } catch (err) {
+    console.error("[SETTINGS ERROR] Failed to check fetching status:", err);
+  }
+
   try {
     const snapshot = await get(cacheRef);
     if (snapshot.exists()) {
       const data = snapshot.val();
       const now = Date.now();
-      if (now - data.timestamp < cacheTtlMs) {
-        console.log(`[CACHE HIT] ${cachePath}`);
+      // If live is disabled, we return the cache regardless of TTL
+      if (!isLiveEnabled || (now - data.timestamp < cacheTtlMs)) {
+        console.log(`[CACHE HIT] ${cachePath}${!isLiveEnabled ? " (FORCED)" : ""}`);
         return data.payload;
       }
       console.log(`[CACHE EXPIRED] ${cachePath}`);
@@ -68,7 +81,11 @@ async function fetchWithCacheAndProxy(
     console.error(`[CACHE ERROR] Failed reading ${cachePath}:`, err);
   }
 
-  let retries = 3;
+  // If live fetching is disabled, we do NOT proceed to scraping if cache miss/expired
+  if (!isLiveEnabled) {
+    console.log(`[SCRAPE SKIPPED] Live fetching is disabled via admin.`);
+    return null;
+  }
   let successData = null;
   
   while (retries > 0) {
