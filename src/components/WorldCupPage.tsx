@@ -32,6 +32,30 @@ interface WorldCupEvent {
   slug: string;
 }
 
+function SkeletonMatchCard() {
+  return (
+    <div className="rounded-3xl bg-[#1c1c1e] border border-white/10 p-5 sm:p-6 overflow-hidden flex flex-col gap-6 animate-pulse">
+       <div className="flex justify-center">
+          <div className="h-2 w-16 bg-white/5 rounded-full" />
+       </div>
+       <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-center gap-2 flex-1">
+             <div className="w-14 h-14 rounded-full bg-white/5 border-2 border-white/5" />
+             <div className="h-3 w-12 bg-white/5 rounded mt-1" />
+          </div>
+          <div className="flex flex-col items-center gap-2">
+             <div className="h-5 w-10 bg-white/10 rounded" />
+             <div className="h-2 w-8 bg-white/5 rounded" />
+          </div>
+          <div className="flex flex-col items-center gap-2 flex-1">
+             <div className="w-14 h-14 rounded-full bg-white/5 border-2 border-white/5" />
+             <div className="h-3 w-12 bg-white/5 rounded mt-1" />
+          </div>
+       </div>
+    </div>
+  );
+}
+
 export function WorldCupPage() {
   const [activeTab, setActiveTab] = useState<"Overview" | "Matches" | "Standings">("Overview");
   const [selectedGroup, setSelectedGroup] = useState<string>("All Groups");
@@ -54,16 +78,19 @@ export function WorldCupPage() {
               { id: 101, tournament: { groupName: "Group A", groupSign: "A" }, homeTeam: { id: 4725, name: "Canada", slug: "canada", shortName: "CAN" }, awayTeam: { id: 4732, name: "Qatar", slug: "qatar", shortName: "QAT" }, startTimestamp: 1781280000, slug: "canada-qatar" },
               { id: 1010, tournament: { groupName: "Group A", groupSign: "A" }, homeTeam: { id: 4726, name: "France", slug: "france", shortName: "FRA" }, awayTeam: { id: 4727, name: "Nigeria", slug: "nigeria", shortName: "NGA" }, startTimestamp: 1781287200, slug: "france-nigeria" },
               { id: 1011, tournament: { groupName: "Group A", groupSign: "A" }, homeTeam: { id: 4728, name: "Brazil", slug: "brazil", shortName: "BRA" }, awayTeam: { id: 4729, name: "Norway", slug: "norway", shortName: "NOR" }, startTimestamp: 1781294400, slug: "brazil-norway" },
+              { id: 1012, tournament: { groupName: "Group A", groupSign: "A" }, homeTeam: { id: 4725, name: "Canada", slug: "canada", shortName: "CAN" }, awayTeam: { id: 4728, name: "Brazil", slug: "brazil", shortName: "BRA" }, startTimestamp: 1781798400, slug: "canada-brazil" },
               
               // Group B
               { id: 102, tournament: { groupName: "Group B", groupSign: "B" }, homeTeam: { id: 4716, name: "Mexico", slug: "mexico", shortName: "MEX" }, awayTeam: { id: 4733, name: "Australia", slug: "australia", shortName: "AUS" }, startTimestamp: 1781366400, slug: "mexico-australia" },
               { id: 1020, tournament: { groupName: "Group B", groupSign: "B" }, homeTeam: { id: 4717, name: "South Korea", slug: "south-korea", shortName: "KOR" }, awayTeam: { id: 4718, name: "Egypt", slug: "egypt", shortName: "EGY" }, startTimestamp: 1781373600, slug: "south-korea-egypt" },
               { id: 1021, tournament: { groupName: "Group B", groupSign: "B" }, homeTeam: { id: 4719, name: "Spain", slug: "spain", shortName: "ESP" }, awayTeam: { id: 4720, name: "Japan", slug: "japan", shortName: "JPN" }, startTimestamp: 1781380800, slug: "spain-japan-early" },
+              { id: 1022, tournament: { groupName: "Group B", groupSign: "B" }, homeTeam: { id: 4716, name: "Mexico", slug: "mexico", shortName: "MEX" }, awayTeam: { id: 4719, name: "Spain", slug: "spain", shortName: "ESP" }, startTimestamp: 1781884800, slug: "mexico-spain" },
               
               // Group C
               { id: 103, tournament: { groupName: "Group C", groupSign: "C" }, homeTeam: { id: 4711, name: "USA", slug: "usa", shortName: "USA" }, awayTeam: { id: 4734, name: "Morocco", slug: "morocco", shortName: "MAR" }, startTimestamp: 1781452800, slug: "usa-morocco" },
               { id: 1030, tournament: { groupName: "Group C", groupSign: "C" }, homeTeam: { id: 4712, name: "Netherlands", slug: "netherlands", shortName: "NED" }, awayTeam: { id: 4713, name: "Ecuador", slug: "ecuador", shortName: "ECU" }, startTimestamp: 1781460000, slug: "netherlands-ecuador" },
               { id: 1031, tournament: { groupName: "Group C", groupSign: "C" }, homeTeam: { id: 4714, name: "Argentina", slug: "argentina", shortName: "ARG" }, awayTeam: { id: 4715, name: "Poland", slug: "poland", shortName: "POL" }, startTimestamp: 1781467200, slug: "argentina-poland-early" },
+              { id: 1032, tournament: { groupName: "Group C", groupSign: "C" }, homeTeam: { id: 4711, name: "USA", slug: "usa", shortName: "USA" }, awayTeam: { id: 4714, name: "Argentina", slug: "argentina", shortName: "ARG" }, startTimestamp: 1781971200, slug: "usa-argentina" },
               
               // Group D
               { id: 104, tournament: { groupName: "Group D", groupSign: "D" }, homeTeam: { id: 47141, name: "Portugal", slug: "portugal", shortName: "POR" }, awayTeam: { id: 47142, name: "Ghana", slug: "ghana", shortName: "GHA" }, startTimestamp: 1781539200, slug: "portugal-ghana" },
@@ -195,7 +222,7 @@ export function WorldCupPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      {loading ? (
-                        [1,2].map(i => <div key={i} className="h-40 rounded-3xl bg-white/5 animate-pulse" />)
+                        [1,2].map(i => <SkeletonMatchCard key={i} />)
                      ) : (
                         events.slice(0, 2).map(event => (
                            <MatchCard key={event.id} event={event} />
@@ -253,7 +280,7 @@ export function WorldCupPage() {
 
                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {loading ? (
-                     [1,2,3,4,5,6].map(i => <div key={i} className="h-40 rounded-3xl bg-white/5 animate-pulse" />)
+                     [1,2,3,4,5,6].map(i => <SkeletonMatchCard key={i} />)
                   ) : (
                      filteredEvents.map(event => (
                         <MatchCard key={event.id} event={event} />

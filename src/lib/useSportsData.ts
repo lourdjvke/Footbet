@@ -160,7 +160,11 @@ export function useSportsData() {
                    rawGoals: [],
                    statistics: []
                }));
-               if (sofaMapped.length > 0) matchResults.push(sofaMapped);
+               if (sofaMapped.length > 0) {
+                  setAllLiveMatches(sofaMapped.filter(m => m.status === 'live'));
+                  setLiveMatch(sofaMapped[0] || null);
+                  matchResults.push(sofaMapped);
+               }
             }
          }
       } catch(e) {
@@ -184,12 +188,11 @@ export function useSportsData() {
       const nextMonth = new Date(now);
       nextMonth.setMonth(now.getMonth() + 1);
       const toDate = nextMonth.toISOString().split('T')[0];
-      
-      const standingsPromises = LEAGUES.map(async (l) => {
+            const standingsPromises = LEAGUES.map(async (l) => {
         try {
            const data = await safeFetch(`action=get_standings&league_id=${l.id}`);
            if (Array.isArray(data)) {
-             standingsMap[l.name] = data.map((t: any) => ({
+             const mapped = data.map((t: any) => ({
                 id: String(t.team_id),
                 name: t.team_name,
                 shortName: t.team_name.substring(0, 3).toUpperCase(),
@@ -201,11 +204,15 @@ export function useSportsData() {
                 points: Number(t.overall_league_PTS),
                 probability: Math.floor(50 + (Math.random() * 40)) 
              }));
+             standingsMap[l.name] = mapped;
+             setAllStandings(prev => ({ ...prev, [l.name]: mapped }));
            }
         } catch (e) {
            console.error(`ERROR: Standings Fetch failed for ${l.name}`, e);
         }
       });
+
+      setProgress(50);
 
       const otherMatchesPromises = LEAGUES.map(async (l) => {
          try {
@@ -214,8 +221,21 @@ export function useSportsData() {
            if (Array.isArray(liveRes)) {
              console.log(`FETCH SUCCESS: Found ${liveRes.length} live events for league ${l.name}`);
              matchResults.push(liveRes);
-           } else {
-             console.log(`FETCH INFO: No live events for league ${l.name}`);
+             // Update upcoming matches list incrementally
+             if (liveRes.length > 0) {
+               setAllLiveMatches(prev => [...prev, ...liveRes.filter(m => m.match_live === "1").map(m => ({
+                 id: String(m.match_id),
+                 homeTeam: { id: m.match_hometeam_id, name: m.match_hometeam_name, shortName: m.match_hometeam_name?.substring(0, 3).toUpperCase(), badge: m.team_home_badge },
+                 awayTeam: { id: m.match_awayteam_id, name: m.match_awayteam_name, shortName: m.match_awayteam_name?.substring(0, 3).toUpperCase(), badge: m.team_away_badge },
+                 date: m.match_date,
+                 time: m.match_time,
+                 stadium: m.match_stadium || "Stadium",
+                 homeScore: Number(m.match_hometeam_score),
+                 awayScore: Number(m.match_awayteam_score),
+                 status: 'live',
+                 minute: 0
+               }))]);
+             }
            }
            
            const data = await safeFetch(`action=get_events&from=${fromDate}&to=${toDate}&league_id=${l.id}`);
@@ -228,7 +248,14 @@ export function useSportsData() {
          }
       });
 
-      await Promise.all([...standingsPromises, ...otherMatchesPromises]);
+      // We don't await all here, we let them update state incrementally
+      Promise.all([...standingsPromises, ...otherMatchesPromises]).then(() => {
+        if (!mountedRef.current) return;
+        setStandingsLoaded(true);
+        setLiveMatchesLoading(false);
+        setProgress(100);
+      });
+
       
       if (!mountedRef.current) return;
       
