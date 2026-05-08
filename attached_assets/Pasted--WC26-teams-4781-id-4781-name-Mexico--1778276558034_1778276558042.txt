@@ -1,0 +1,302 @@
+{
+  "WC26": {
+    "teams": {
+      "4781": {
+        "id": 4781,
+        "name": "Mexico",
+        "shortName": "Mexico",
+        "slug": "mexico",
+        "nameCode": "MEX",
+        "ranking": 15,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "MX",
+          "alpha3": "MEX",
+          "name": "Mexico"
+        },
+        "colors": {
+          "primary": "#1a4d3e",
+          "secondary": "#960000"
+        },
+        "userCount": 253827
+      },
+      "4736": {
+        "id": 4736,
+        "name": "South Africa",
+        "shortName": "South Africa",
+        "slug": "south-africa",
+        "nameCode": "RSA",
+        "ranking": 60,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "ZA",
+          "alpha3": "ZAF",
+          "name": "South Africa"
+        },
+        "colors": {
+          "primary": "#ffd800",
+          "secondary": "#008040"
+        },
+        "userCount": 141147
+      },
+      "4735": {
+        "id": 4735,
+        "name": "South Korea",
+        "shortName": "South Korea",
+        "slug": "south-korea",
+        "nameCode": "KOR",
+        "ranking": 25,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "KR",
+          "alpha3": "KOR",
+          "name": "South Korea"
+        },
+        "colors": {
+          "primary": "#ff0000",
+          "secondary": "#0000ff"
+        },
+        "userCount": 79893
+      },
+      "4714": {
+        "id": 4714,
+        "name": "Czechia",
+        "shortName": "Czechia",
+        "slug": "czech-republic",
+        "nameCode": "CZE",
+        "ranking": 41,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "CZ",
+          "alpha3": "CZE",
+          "name": "Czechia"
+        },
+        "colors": {
+          "primary": "#cc0000",
+          "secondary": "#025095"
+        },
+        "userCount": 70396
+      },
+      "4820": {
+        "id": 4820,
+        "name": "Colombia",
+        "shortName": "Colombia",
+        "slug": "colombia",
+        "nameCode": "COL",
+        "ranking": 13,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "CO",
+          "alpha3": "COL",
+          "name": "Colombia"
+        },
+        "colors": {
+          "primary": "#ffd808",
+          "secondary": "#000066"
+        },
+        "userCount": 346447
+      },
+      "4723": {
+        "id": 4723,
+        "name": "Uzbekistan",
+        "shortName": "Uzbekistan",
+        "slug": "uzbekistan",
+        "nameCode": "UZB",
+        "ranking": 50,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "UZ",
+          "alpha3": "UZB",
+          "name": "Uzbekistan"
+        },
+        "colors": {
+          "primary": "#0080ff",
+          "secondary": "#ffffff"
+        },
+        "userCount": 111850
+      },
+      "4764": {
+        "id": 4764,
+        "name": "Ghana",
+        "shortName": "Ghana",
+        "slug": "ghana",
+        "nameCode": "GHA",
+        "ranking": 74,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "GH",
+          "alpha3": "GHA",
+          "name": "Ghana"
+        },
+        "colors": {
+          "primary": "#ff0000",
+          "secondary": "#ffff00"
+        },
+        "userCount": 212773
+      },
+      "5164": {
+        "id": 5164,
+        "name": "Panama",
+        "shortName": "Panama",
+        "slug": "panama",
+        "nameCode": "PAN",
+        "ranking": 33,
+        "gender": "M",
+        "national": true,
+        "country": {
+          "alpha2": "PA",
+          "alpha3": "PAN",
+          "name": "Panama"
+        },
+        "colors": {
+          "primary": "#cc0000",
+          "secondary": "#005293"
+        },
+        "userCount": 41219
+      }
+    },
+    "matches": [
+      {
+        "eventId": 15186710,
+        "customId": "LUbsGVb",
+        "homeTeam": {
+          "id": 4781,
+          "name": "Mexico",
+          "shortName": "Mexico",
+          "nameCode": "MEX"
+        },
+        "awayTeam": {
+          "id": 4736,
+          "name": "South Africa",
+          "shortName": "South Africa",
+          "nameCode": "RSA"
+        },
+        "tournament": {
+          "name": "FIFA World Cup, Group A",
+          "group": "A",
+          "groupName": "Group A",
+          "season": "World Cup 2026",
+          "year": "2026"
+        },
+        "match": {
+          "status": 0,
+          "statusDescription": "Not started",
+          "startTimestamp": 1781204400,
+          "round": 1
+        }
+      },
+      {
+        "eventId": 15186711,
+        "customId": "oUbsKUb",
+        "homeTeam": {
+          "id": 4735,
+          "name": "South Korea",
+          "shortName": "South Korea",
+          "nameCode": "KOR"
+        },
+        "awayTeam": {
+          "id": 4714,
+          "name": "Czechia",
+          "shortName": "Czechia",
+          "nameCode": "CZE"
+        },
+        "tournament": {
+          "name": "FIFA World Cup, Group A",
+          "group": "A",
+          "groupName": "Group A",
+          "season": "World Cup 2026",
+          "year": "2026"
+        },
+        "match": {
+          "status": 0,
+          "statusDescription": "Not started",
+          "startTimestamp": 1781215200,
+          "round": 1
+        }
+      },
+      {
+        "eventId": 15186722,
+        "customId": "yUbsvWb",
+        "homeTeam": {
+          "id": 4723,
+          "name": "Uzbekistan",
+          "shortName": "Uzbekistan",
+          "nameCode": "UZB"
+        },
+        "awayTeam": {
+          "id": 4820,
+          "name": "Colombia",
+          "shortName": "Colombia",
+          "nameCode": "COL"
+        },
+        "tournament": {
+          "name": "FIFA World Cup, Group K",
+          "group": "K",
+          "groupName": "Group K",
+          "season": "World Cup 2026",
+          "year": "2026"
+        },
+        "match": {
+          "status": 0,
+          "statusDescription": "Not started",
+          "startTimestamp": 1781748000,
+          "round": 1
+        }
+      },
+      {
+        "eventId": 15186687,
+        "customId": "oVbsodc",
+        "homeTeam": {
+          "id": 4764,
+          "name": "Ghana",
+          "shortName": "Ghana",
+          "nameCode": "GHA"
+        },
+        "awayTeam": {
+          "id": 5164,
+          "name": "Panama",
+          "shortName": "Panama",
+          "nameCode": "PAN"
+        },
+        "tournament": {
+          "name": "FIFA World Cup, Group L",
+          "group": "L",
+          "groupName": "Group L",
+          "season": "World Cup 2026",
+          "year": "2026"
+        },
+        "match": {
+          "status": 0,
+          "statusDescription": "Not started",
+          "startTimestamp": 1781737200,
+          "round": 1
+        }
+      }
+    ],
+    "groups": {
+      "groups": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ],
+      "totalTeams": 32,
+      "totalMatches": 64
+    }
+  }
+}
