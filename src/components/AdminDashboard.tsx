@@ -21,6 +21,7 @@ const db = getDatabase(app);
 export function AdminDashboard() {
   const [isLiveEnabled, setIsLiveEnabled] = useState<boolean | null>(null);
   const [lastLiveFetch, setLastLiveFetch] = useState<number | null>(null);
+  const [dbStatus, setDbStatus] = useState<"connecting" | "connected" | "failed">("connecting");
 
   useEffect(() => {
     const settingsRef = ref(db, 'settings/isLiveFetchingEnabled');
@@ -28,6 +29,10 @@ export function AdminDashboard() {
 
     const unsubSettings = onValue(settingsRef, (snapshot) => {
       setIsLiveEnabled(snapshot.val() ?? true);
+      setDbStatus("connected");
+    }, (err) => {
+      console.error("[ADMIN] Firebase Error:", err);
+      setDbStatus("failed");
     });
 
     const unsubCache = onValue(liveCacheRef, (snapshot) => {
@@ -120,8 +125,10 @@ export function AdminDashboard() {
                   <span className="text-sm text-gray-300">Firebase RTDB</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-xs font-medium text-green-500">CONNECTED</span>
+                  <div className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-green-500' : dbStatus === 'failed' ? 'bg-red-500' : 'bg-orange-500 animate-pulse'}`} />
+                  <span className={`text-xs font-medium ${dbStatus === 'connected' ? 'text-green-500' : dbStatus === 'failed' ? 'text-red-500' : 'text-orange-500'}`}>
+                    {dbStatus.toUpperCase()}
+                  </span>
                 </div>
               </div>
 
