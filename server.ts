@@ -7,7 +7,11 @@ import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get, set } from "firebase/database";
-import fallbackData from "./src/fallbackData.json" with { type: "json" };
+import fs from "fs";
+import fetch from "node-fetch";
+import cors from "cors";
+
+const fallbackData = JSON.parse(fs.readFileSync(path.join(process.cwd(), "src/fallbackData.json"), "utf-8"));
 
 const firebaseConfig = {
   apiKey: "AIzaSyBIQm_Ux_JuO66_C4WNv7FG0Oa8KixMtI0",
@@ -87,6 +91,7 @@ async function fetchWithCacheAndProxy(
     return null;
   }
   let successData = null;
+  let retries = 3;
   
   while (retries > 0) {
     const apiKey = getRandomSaKey();
@@ -179,6 +184,9 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(cors());
+  app.use(express.json());
+
   let sessionInitialized = false;
   const initializeSession = async () => {
     if (sessionInitialized) return;
@@ -191,6 +199,16 @@ async function startServer() {
       console.error("Failed to initialize Sofascore session");
     }
   };
+
+  // API health check
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      time: new Date().toISOString(),
+      env: process.env.NODE_ENV || "development",
+      port: PORT
+    });
+  });
 
   // API Route to fetch live events
   app.get("/api/live-events", async (req, res) => {
@@ -302,10 +320,22 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    // Resolve absolute path to dist directory
+    const distPath = path.resolve(process.cwd(), "dist");
+    console.log(`[PRODUCTION] Serving static files from: ${distPath}`);
+    
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    
+    // Check if index.html exists, if not, log it
+    const indexHtml = path.join(distPath, "index.html");
+    
+    app.get("*", (req, res) => {
+      res.sendFile(indexHtml, (err) => {
+        if (err) {
+          console.error(`[ERROR] index.html not found at ${indexHtml}`);
+          res.status(404).send("Application not built correctly. Please run 'npm run build'.");
+        }
+      });
     });
   }
 

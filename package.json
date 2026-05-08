@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "node server.ts",
+    "start": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -20,6 +20,7 @@
     "axios": "^1.16.0",
     "axios-cookiejar-support": "^7.0.0",
     "clsx": "^2.1.1",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.13.0",
