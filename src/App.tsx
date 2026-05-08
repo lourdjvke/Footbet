@@ -11,7 +11,6 @@ import { LeftSidebar } from "./components/LeftSidebar";
 import { CenterFeed } from "./components/CenterFeed";
 import { RightSidebar } from "./components/RightSidebar";
 import { WorldCupPage } from "./components/WorldCupPage";
-import { AdminDashboard } from "./components/AdminDashboard";
 import { useSportsData } from "./lib/useSportsData";
 
 function Dashboard() {
@@ -32,13 +31,12 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const isAdminPage = location.pathname === "/admin";
-  const currentPage = location.pathname.includes("world-cup") ? "world-cup" : isAdminPage ? "admin" : "dashboard";
+  const currentPage = location.pathname.includes("world-cup") ? "world-cup" : "dashboard";
 
   return (
     <div className="min-h-screen bg-dark-bg flex flex-col overflow-hidden selection:bg-blue-500/30">
-      {/* Preloader - Only shows if standings not loaded and NOT on admin page */}
-      {!standingsLoaded && !isAdminPage && (
+      {/* Preloader - Only shows if standings not loaded */}
+      {!standingsLoaded && (
         <div className="fixed inset-0 z-[100] bg-dark-bg/80 backdrop-blur-md flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
                <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"/>
@@ -47,21 +45,18 @@ function AppContent() {
         </div>
       )}
 
-      {!isAdminPage && (
-        <TopNav 
-          onMenuClick={() => setMobileMenuOpen(true)} 
-          currentPage={currentPage as any}
-          onNavigate={(page) => navigate(page === "world-cup" ? "/world-cup" : "/")}
-        />
-      )}
+      <TopNav 
+        onMenuClick={() => setMobileMenuOpen(true)} 
+        currentPage={currentPage as any}
+        onNavigate={(page) => navigate(page === "world-cup" ? "/world-cup" : "/")}
+      />
       
       {/* Main Content Area */}
       <main className="flex-1 overflow-x-hidden overflow-y-auto no-scrollbar relative z-10">
-        <div className={isAdminPage ? "" : "max-w-[1600px] mx-auto px-4 sm:px-6 py-6 h-full"}>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 h-full">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/world-cup" element={<WorldCupPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/WC26" element={<Navigate to="/world-cup" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

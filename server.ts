@@ -7,21 +7,7 @@ import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get, set } from "firebase/database";
-import fs from "fs";
-import cors from "cors";
-
-// Use global fetch if available (Node 18+), otherwise fallback to node-fetch if needed
-// However, since we are on modern Node, let's just make sure we are careful.
-const safeFetch = async (url: string, init?: RequestInit) => {
-  try {
-    return await fetch(url, init);
-  } catch (err: any) {
-    console.error(`[FETCH ERROR] ${url}:`, err.message);
-    throw err;
-  }
-};
-
-const fallbackData = JSON.parse(fs.readFileSync(path.join(process.cwd(), "src/fallbackData.json"), "utf-8"));
+import fallbackData from "./src/fallbackData.json" with { type: "json" };
 
 const firebaseConfig = {
   apiKey: "AIzaSyBIQm_Ux_JuO66_C4WNv7FG0Oa8KixMtI0",
@@ -65,26 +51,13 @@ async function fetchWithCacheAndProxy(
     fallback?: () => Promise<any>
 ) {
   const cacheRef = ref(rtdb, cachePath);
-  const settingsRef = ref(rtdb, "settings/isLiveFetchingEnabled");
-  
-  let isLiveEnabled = true;
-  try {
-    const settingsSnap = await get(settingsRef);
-    if (settingsSnap.exists()) {
-      isLiveEnabled = settingsSnap.val();
-    }
-  } catch (err) {
-    console.error("[SETTINGS ERROR] Failed to check fetching status:", err);
-  }
-
   try {
     const snapshot = await get(cacheRef);
     if (snapshot.exists()) {
       const data = snapshot.val();
       const now = Date.now();
-      // If live is disabled, we return the cache regardless of TTL
-      if (!isLiveEnabled || (now - data.timestamp < cacheTtlMs)) {
-        console.log(`[CACHE HIT] ${cachePath}${!isLiveEnabled ? " (FORCED)" : ""}`);
+      if (now - data.timestamp < cacheTtlMs) {
+        console.log(`[CACHE HIT] ${cachePath}`);
         return data.payload;
       }
       console.log(`[CACHE EXPIRED] ${cachePath}`);
@@ -95,13 +68,8 @@ async function fetchWithCacheAndProxy(
     console.error(`[CACHE ERROR] Failed reading ${cachePath}:`, err);
   }
 
-  // If live fetching is disabled, we do NOT proceed to scraping if cache miss/expired
-  if (!isLiveEnabled) {
-    console.log(`[SCRAPE SKIPPED] Live fetching is disabled via admin.`);
-    return null;
-  }
-  let successData = null;
   let retries = 3;
+  let successData = null;
   
   while (retries > 0) {
     const apiKey = getRandomSaKey();
@@ -109,7 +77,7 @@ async function fetchWithCacheAndProxy(
     
     try {
       console.log(`[SCRAPE] Fetching ${targetUrl} with key ${apiKey.substring(0,6)}...`);
-      const response = await safeFetch(proxyUrl);
+      const response = await fetch(proxyUrl);
       const text = await response.text();
       
       if (response.status === 409 || response.status === 429) {
@@ -124,30 +92,23 @@ async function fetchWithCacheAndProxy(
         continue;
       }
       
-      // Robust extraction of JSON from HTML response if ScrapingAnt returns a browser page
       let jsonString = text;
-      if (text.includes('<html') || text.includes('<!DOCTYPE')) {
-        try {
-          const dom = new JSDOM(text);
-          const doc = dom.window.document;
-          // Sofascore often wraps API responses in <pre> when accessed via browser
-          jsonString = doc.querySelector('pre')?.textContent || doc.body.textContent || text;
-        } catch (e) {
-          // Regex fallback if JSDOM fails in production
-          const match = text.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
-          if (match) jsonString = match[1];
-        }
+      if (text.trim().startsWith('<')) {
+        const dom = new JSDOM(text);
+        const doc = dom.window.document;
+        jsonString = doc.querySelector('pre')?.textContent || doc.body.textContent || text;
       }
       
       try {
-        const parsed = JSON.parse(jsonString.trim());
-        if (parsed && (Array.isArray(parsed) || typeof parsed === 'object')) {
+        const parsed = JSON.parse(jsonString);
+        if (response.status === 200) {
            successData = parsed;
            break; 
         }
       } catch (e: any) {
-        console.error(`[SCRAPE] JSON parse err: ${e.message}. Text start: ${jsonString.substring(0, 50)}`);
+        console.error(`[SCRAPE] JSON parse err: ${e.message}`);
       }
+      
       retries--;
       await new Promise(r => setTimeout(r, 1000));
     } catch (e: any) {
@@ -201,35 +162,18 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(cors());
-  app.use(express.json());
-
   let sessionInitialized = false;
   const initializeSession = async () => {
     if (sessionInitialized) return;
     try {
       console.log("Initializing Sofascore session...");
-      // Try a few times
       await client.get("https://www.sofascore.com/");
       sessionInitialized = true;
       console.log("Session initialized.");
-    } catch (e: any) {
-      console.error("Failed to initialize Sofascore session:", e.message);
+    } catch (e) {
+      console.error("Failed to initialize Sofascore session");
     }
   };
-
-  // Call it immediately
-  initializeSession();
-
-  // API health check
-  app.get("/api/health", (req, res) => {
-    res.json({ 
-      status: "ok", 
-      time: new Date().toISOString(),
-      env: process.env.NODE_ENV || "development",
-      port: PORT
-    });
-  });
 
   // API Route to fetch live events
   app.get("/api/live-events", async (req, res) => {
@@ -241,7 +185,7 @@ async function startServer() {
        const footballApiKey = "f29d4c662ac81ed3a744727739add7a4a55e655c566695265112a2c9527bb7fb";
        try {
           console.log("[LIVE-EVENTS] Falling back to Football-API for live matches...");
-          const fbRes = await safeFetch(`https://apiv3.apifootball.com/?action=get_events&match_live=1&APIkey=${footballApiKey}`);
+          const fbRes = await fetch(`https://apiv3.apifootball.com/?action=get_events&match_live=1&APIkey=${footballApiKey}`);
           if (fbRes.ok) {
              const fbData = await fbRes.json();
              if (Array.isArray(fbData)) {
@@ -270,10 +214,10 @@ async function startServer() {
       if (data) {
         return res.json(data);
       }
-      return res.status(200).json({ events: [], message: "No data found", status: "empty" });
+      return res.status(500).json({ error: "Failed to fetch events" });
     } catch (e: any) {
       console.error("[LIVE-EVENTS] Controller error:", e.message);
-      return res.status(200).json({ events: [], error: e.message, status: "error" });
+      return res.status(500).json({ error: e.message });
     }
   });
 
@@ -285,7 +229,7 @@ async function startServer() {
     
     try {
       console.log(`[FOOTBALL-API] Fetching: ${url}`);
-      const response = await safeFetch(url);
+      const response = await fetch(url);
       const data = await response.json();
       if (!response.ok) {
         console.error(`[FOOTBALL-API] Error ${response.status}:`, data);
@@ -326,10 +270,10 @@ async function startServer() {
       if (data) {
         return res.json(data);
       }
-      return res.status(200).json({ events: [], status: "empty" });
+      return res.json({ events: [] });
     } catch (e: any) {
       console.error("[WORLD-CUP] Controller error:", e.message);
-      return res.status(200).json({ events: [], error: e.message, status: "error" });
+      return res.status(500).json({ error: e.message });
     }
   });
 
@@ -341,22 +285,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Resolve absolute path to dist directory
-    const distPath = path.resolve(process.cwd(), "dist");
-    console.log(`[PRODUCTION] Serving static files from: ${distPath}`);
-    
+    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    
-    // Check if index.html exists, if not, log it
-    const indexHtml = path.join(distPath, "index.html");
-    
-    app.get("*", (req, res) => {
-      res.sendFile(indexHtml, (err) => {
-        if (err) {
-          console.error(`[ERROR] index.html not found at ${indexHtml}`);
-          res.status(404).send("Application not built correctly. Please run 'npm run build'.");
-        }
-      });
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
