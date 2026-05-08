@@ -70,7 +70,8 @@ export function WorldCupPage() {
   };
 
   const [activeTab, setActiveTab] = useState<"Overview" | "Matches" | "Standings">(resolveTab(initialTab));
-  const [selectedGroup, setSelectedGroup] = useState<string>("All Groups");
+  const [selectedGroup, setSelectedGroup] = useState<string>("All");
+  const [groupLetters, setGroupLetters] = useState<string[]>([]);
   const [events, setEvents] = useState<WorldCupEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,6 +138,12 @@ export function WorldCupPage() {
 
           mapped.sort((a, b) => a.startTimestamp - b.startTimestamp);
           setEvents(mapped);
+
+          const letters: string[] = Array.isArray(data.groups?.groups)
+            ? data.groups.groups
+            : Array.from(new Set(rawMatches.map((m: any) => m.tournament.group))).sort();
+          setGroupLetters(letters);
+
           setLoading(false);
         }, () => setLoading(false));
       });
@@ -145,11 +152,9 @@ export function WorldCupPage() {
     return () => { if (unsubscribe) unsubscribe(); };
   }, []);
 
-  const groups = ["All Groups", ...Array.from(new Set(events.map(e => e.tournament.groupName))).sort()];
-
-  const filteredEvents = selectedGroup === "All Groups" 
-    ? events 
-    : events.filter(e => e.tournament.groupName === selectedGroup);
+  const filteredEvents = selectedGroup === "All"
+    ? events
+    : events.filter(e => e.tournament.groupSign === selectedGroup);
 
   return (
     <motion.div 
@@ -282,18 +287,18 @@ export function WorldCupPage() {
             <div className="flex flex-col gap-6">
                {/* Glassmorphic Group Filters Carousel */}
                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 mask-linear-r">
-                  {groups.map((group) => (
+                  {(["All", ...groupLetters]).map((letter) => (
                      <button
-                        key={group}
-                        onClick={() => setSelectedGroup(group)}
+                        key={letter}
+                        onClick={() => setSelectedGroup(letter)}
                         className={cn(
                            "px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all border shrink-0",
-                           selectedGroup === group 
-                              ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]" 
+                           selectedGroup === letter
+                              ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                               : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white"
                         )}
                      >
-                        {group}
+                        {letter === "All" ? "All Groups" : `Group ${letter}`}
                      </button>
                   ))}
                </div>
