@@ -432,7 +432,7 @@ async function startServer() {
   });
 
   app.get("/api/world-cup-events", async (req, res) => {
-    const targetUrl = "https://www.sofascore.com/api/v1/unique-tournament/16/season/58210/events/round/1";
+    const targetUrl = "https://www.sofascore.com/api/v1/unique-tournament/16/season/68512/events";
     const cachePath = "worldCupEvents";
     const cacheTtlMs = 24 * 60 * 60 * 1000; // 24 hours
 

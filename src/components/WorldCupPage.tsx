@@ -4,7 +4,6 @@ import { Trophy, Calendar, Info, Users, ChevronRight, ArrowRight, BarChart2, Act
 import { RotatingWorldCupIcon } from "./RotatingWorldCupIcon";
 import { cn } from "../lib/utils";
 
-import { fetchWithCacheAndProxy } from "../lib/fetcher";
 
 interface Team {
   name: string;
@@ -88,7 +87,6 @@ export function WorldCupPage() {
   };
 
   useEffect(() => {
-    const targetUrl = "https://www.sofascore.com/api/v1/unique-tournament/16/season/68512/events";
     const cachePath = "worldCupEvents";
     import("firebase/database").then(({ ref, onValue }) => {
       import("../lib/firebase").then(({ rtdb }) => {
@@ -104,8 +102,9 @@ export function WorldCupPage() {
           }
         });
 
-        // Trigger background fetch
-        fetchWithCacheAndProxy(targetUrl, cachePath, 60 * 60 * 1000)
+        // Trigger server-side fetch via the API endpoint (ScrapingAnt runs server-side only)
+        fetch("/api/world-cup-events")
+          .then(r => r.json())
           .then(data => {
             if (data && data.events?.length > 0) {
                setEvents(data.events);
