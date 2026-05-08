@@ -67,33 +67,41 @@ function getRandomSaKey() {
   return SA_KEYS[idx];
 }
 
-const processEventsPayload = (data: any) => {
-  if (data && data.events && Array.isArray(data.events)) {
-    data.events = data.events.map((e: any) => {
-      // Use ONLY the root-level 'id' field — the Sofascore event ID that appears
-      // after 'crowdsourcingDataDisplayEnabled' in the API response.
-      // We use != null so a valid ID of 0 is not skipped.
-      // Only fall back to match_id/matchId if e.id is genuinely absent (null/undefined).
-      const rootId = e.id != null ? e.id : (e.match_id ?? e.matchId);
+// Scan the raw Sofascore JSON string and collect the "id" value that appears
+// immediately after each "crowdsourcingDataDisplayEnabled" field, in order.
+// Pattern in the wire response: ..."crowdsourcingDataDisplayEnabled":false,"id":13980073,...
+function extractIdsAfterCrowdsourcing(rawJson: string): string[] {
+  const ids: string[] = [];
+  const re = /"crowdsourcingDataDisplayEnabled":(true|false),"id":(\d+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(rawJson)) !== null) {
+    ids.push(m[2]);
+  }
+  return ids;
+}
 
-      // Team IDs — prefer nested objects, fall back to flat fields
+const processEventsPayload = (data: any, rawJson?: string) => {
+  if (data && data.events && Array.isArray(data.events)) {
+    // If we have the raw response string, extract the real event IDs from it directly.
+    const sofascoreIds = rawJson ? extractIdsAfterCrowdsourcing(rawJson) : [];
+
+    data.events = data.events.map((e: any, idx: number) => {
+      // Prefer the ID pulled straight from the raw JSON (the one after crowdsourcingDataDisplayEnabled).
+      // Fall back to the parsed object's id only when raw extraction isn't available.
+      const rootId = sofascoreIds[idx] ?? (e.id != null ? String(e.id) : (e.match_id ?? e.matchId));
+
       const homeId = e.homeTeam?.id ?? e.match_hometeam_id ?? e.homeId ?? e.home_id;
       const awayId = e.awayTeam?.id ?? e.match_awayteam_id ?? e.awayId ?? e.away_id;
-
-      // Tournament ID
       const tournamentId = e.tournament?.id ?? e.uniqueTournament?.id ?? e.league_id ?? e.tournamentId;
 
-      const processed = {
+      return {
         ...e,
-        // Overwrite id fields with the correctly resolved values
         id: rootId != null ? String(rootId) : e.id,
         match_id: rootId != null ? String(rootId) : undefined,
         home_id: homeId != null ? String(homeId) : undefined,
         away_id: awayId != null ? String(awayId) : undefined,
         tournament_id: tournamentId != null ? String(tournamentId) : undefined,
       };
-
-      return processed;
     });
   }
   return data;
@@ -149,6 +157,7 @@ async function fetchWithCacheAndProxy(
   }
   
   let successData = null;
+  let successRawJson: string | undefined;
   let retries = 3;
   
   while (retries > 0) {
@@ -183,6 +192,7 @@ async function fetchWithCacheAndProxy(
         const parsed = JSON.parse(jsonString);
         if (response.status === 200) {
            successData = parsed;
+           successRawJson = jsonString; // keep raw string so we can extract IDs from it
            break; 
         }
       } catch (e: any) {
@@ -201,12 +211,15 @@ async function fetchWithCacheAndProxy(
   if (!successData && fallback) {
      console.log(`[SCRAPE] All ScrapingAnt retries failed. Attempting fallback...`);
      successData = await fallback();
+     // fallback data comes from Football-API — no raw Sofascore JSON available
+     successRawJson = undefined;
   }
 
   if (successData && rtdb) {
-    // Apply ID mapping for liveEvents
+    // Apply ID mapping for liveEvents — pass the raw JSON so IDs are extracted
+    // literally from the "crowdsourcingDataDisplayEnabled"→"id" pattern.
     if (cachePath === "liveEvents") {
-       successData = processEventsPayload(successData);
+       successData = processEventsPayload(successData, successRawJson);
     }
     try {
       await set(cacheRef, { timestamp: Date.now(), payload: successData });
