@@ -12,8 +12,11 @@ export function RightSidebar() {
   const [activeTab, setActiveTab] = useState("Lineup");
   const [activeGroup, setActiveGroup] = useState("Premier League");
   const [lineup, setLineup] = useState<any>(null);
+  const [odds, setOdds] = useState<any>(null);
   const [loadingLineup, setLoadingLineup] = useState(false);
+  const [loadingOdds, setLoadingOdds] = useState(false);
   const [lineupError, setLineupError] = useState<string | null>(null);
+  const [oddsError, setOddsError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const liveMatch = allLiveMatches[currentMatchIndex] || allLiveMatches[0];
@@ -69,6 +72,39 @@ export function RightSidebar() {
             console.error("Lineup Fetch Error:", e);
             setLineupError(e.message);
             setLoadingLineup(false);
+        });
+    }
+  }, [activeTab, liveMatch?.id]);
+
+  useEffect(() => {
+    if (activeTab === "Odds" && liveMatch && liveMatch.id) {
+       
+       setOdds(null);
+       setOddsError(null);
+       setLoadingOdds(true);
+       
+       console.log(`Fetching odds for match ID: ${liveMatch.id}`);
+       
+       const targetUrl = `https://www.sofascore.com/api/v1/event/${liveMatch.id}/odds/1/all`;
+       const cachePath = `odds/${liveMatch.id}`;
+       fetchWithCacheAndProxy(targetUrl, cachePath, 5 * 60 * 1000)
+        .then(data => {
+            if (!data) {
+                setOdds({});
+                return;
+            }
+            if (data.error) {
+              const errorStr = typeof data.error === 'object' ? JSON.stringify(data.error, null, 2) : String(data.error);
+              setOddsError(errorStr);
+            } else {
+              setOdds(data);
+            }
+            setLoadingOdds(false);
+        })
+        .catch(e => {
+            console.error("Odds Fetch Error:", e);
+            setOddsError(e.message);
+            setLoadingOdds(false);
         });
     }
   }, [activeTab, liveMatch?.id]);
@@ -311,10 +347,34 @@ export function RightSidebar() {
                    )}
                 </div>
             )}
-            {activeTab === "Insights" && (
-                <div className="text-xs text-center w-full text-white/80 px-4 leading-relaxed">
-                   <p><span className="font-semibold text-blue-400">{liveMatch.homeTeam.shortName}</span> has higher xG (1.82) compared to <span className="font-semibold text-orange-400">{liveMatch.awayTeam.shortName}</span> (0.95).</p>
-                   <p className="mt-2 text-[10px] text-text-muted">Recommended bet: Over 2.5 goals</p>
+            {activeTab === "Odds" && (
+                <div className="flex flex-col gap-3 w-full text-xs max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                    {loadingOdds ? (
+                       <div className="text-center text-text-muted py-4 flex flex-col items-center gap-2">
+                         <div className="w-4 h-4 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                         <span>Loading Odds...</span>
+                       </div>
+                    ) : oddsError ? (
+                        <div className="text-center text-text-muted italic py-4">Odds not available</div>
+                    ) : odds && odds.markets ? (
+                        <>
+                           {odds.markets.slice(0, 3).map((market: any) => (
+                               <div key={market.id} className="bg-white/5 p-2 rounded-lg">
+                                 <div className="font-semibold text-white mb-2">{market.marketName}</div>
+                                 <div className="grid grid-cols-3 gap-1">
+                                    {market.choices.map((choice: any) => (
+                                        <div key={choice.sourceId} className="flex flex-col items-center bg-black/20 p-1 rounded">
+                                            <span className="text-[9px] text-text-muted">{choice.name}</span>
+                                            <span className="font-bold text-orange-400">{choice.fractionalValue}</span>
+                                        </div>
+                                    ))}
+                                 </div>
+                               </div>
+                           ))}
+                        </>
+                    ) : (
+                        <div className="text-center text-text-muted italic py-4">No odds data</div>
+                    )}
                 </div>
             )}
          </div>
@@ -324,7 +384,7 @@ export function RightSidebar() {
             <Tab label="Timeline" active={activeTab === "Timeline"} onClick={() => setActiveTab("Timeline")} />
             <Tab label="Lineup" active={activeTab === "Lineup"} onClick={() => setActiveTab("Lineup")} />
             <Tab label="Stats" active={activeTab === "Statistics"} onClick={() => setActiveTab("Statistics")} />
-            <Tab label="Insights" active={activeTab === "Insights"} onClick={() => setActiveTab("Insights")} />
+            <Tab label="Odds" active={activeTab === "Odds"} onClick={() => setActiveTab("Odds")} />
          </div>
 
          {allLiveMatches.length > 1 && (

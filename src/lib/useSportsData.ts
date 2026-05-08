@@ -378,22 +378,20 @@ export function useSportsData() {
 
       const liveOnes = mappedMatches.filter(m => m.status === 'live');
       const MVP_CANDIDATES = [
-        { name: "Harry Kane", team: "Bayern München", league: "Bundesliga", goals: 33, id: "144553" },
-        { name: "Erling Haaland", team: "Man City", league: "Premier League", goals: 25, id: "839956" },
-        { name: "Kylian Mbappé", team: "Real Madrid", league: "La Liga", goals: 24, id: "826643" },
-        { name: "Igor Thiago", team: "Brentford", league: "Premier League", goals: 22, id: "991011" },
-        { name: "Vedat Muriqi", team: "Mallorca", league: "La Liga", goals: 21, id: "344614" },
+        { name: "Harry Kane", team: "Bayern München", league: "Bundesliga", goals: 33, id: "144553", image: "https://assets.bundesliga.com/contender/2026/3/imago1066136351.jpg?crop=616px,41px,1858px,1487px&fit=540,540" },
+        { name: "Erling Haaland", team: "Man City", league: "Premier League", goals: 25, id: "839956", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuvjiVY2Zs8Ap4zGJrxQb4cJi3JWeQPV-Axoy4ahlJq8f4b_o27nSsd74H&s=10" },
+        { name: "Kylian Mbappé", team: "Real Madrid", league: "La Liga", goals: 24, id: "826643", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyTaSTUfwAhqWlGEGxa2uE--MFzm73oaFtYNF8ktAyPA&s=10" },
+        { name: "Igor Thiago", team: "Brentford", league: "Premier League", goals: 22, id: "991011", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB9wcXR69MxDUX91Cocfvme8GTDlAX2PJnxChom-VbDA&s=10" },
+        { name: "Vedat Muriqi", team: "Mallorca", league: "La Liga", goals: 21, id: "344614", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-bMmdPEa1lNc0zmwVZyjqbtnQM9RvXltzNgbNLnTcuUfjjTMLJWtKDpyh&s=10" },
       ];
       const randomMvp = MVP_CANDIDATES[Math.floor(Math.random() * MVP_CANDIDATES.length)];
       
       let newMvp = { 
         name: randomMvp.name, 
-        description: `Top Scorer (${randomMvp.goals} Goals)`, 
+        description: `${randomMvp.league} - ${randomMvp.goals} Goals`, 
         team: randomMvp.team, 
         teamBadge: "", // Or maybe an api link or just empty string 
-        age: 26, 
-        score: 95, 
-        image: `https://api.sofascore.app/api/v1/player/${randomMvp.id}/image`
+        image: randomMvp.image
       };
 
       const cache = {

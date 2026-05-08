@@ -40,18 +40,7 @@ export function LeftSidebar() {
              <div className="w-14 h-14 rounded-full border-2 border-orange-500/30 overflow-hidden bg-black/20 p-0.5">
                 <img src={mvp.image} alt={mvp.name} className="w-full h-full object-cover rounded-full" />
              </div>
-             <div className="bg-orange-500 text-[10px] font-bold text-white px-2 py-0.5 rounded-full -mt-2 relative z-10">
-                {mvp.score}
-             </div>
           </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <StatBox icon={<Target className="w-3 h-3"/>} title="Matches" value="8" subValue="4 Upcoming" />
-          <StatBox title="Goals" value="23" subValue="2.9 Per match" isAccent />
-          <StatBox icon={<Activity className="w-3 h-3"/>} title="Match Upsets" value="2" subValue="30% Win probability" />
-          <StatBox title="Pressing Intensity" value="9.4" subValue="average" highlightSubValue="6.1 press peak" />
         </div>
       </div>
 
@@ -94,24 +83,6 @@ export function LeftSidebar() {
         </div>
       </div>
 
-    </div>
-  )
-}
-
-function StatBox({ title, icon, value, subValue, highlightSubValue, isAccent }: any) {
-  return (
-    <div className="bg-white/5 border border-white/5 rounded-lg p-3">
-      <div className="flex items-center gap-1.5 text-xs text-text-muted mb-2">
-        {title} {icon && icon}
-      </div>
-      <div className="flex items-baseline gap-1.5 mb-1">
-        <span className="text-lg font-semibold">{value}</span>
-        {isAccent && <span className="text-xs text-text-muted">Goals</span>}
-        {!isAccent && title.includes("Upsets") && <span className="text-xs text-text-muted">Upsets</span>}
-      </div>
-      <div className="text-[10px] text-text-muted">
-         {subValue} <br/> {highlightSubValue && <span className="text-green-400 mt-0.5 block">{highlightSubValue}</span>}
-      </div>
     </div>
   )
 }
