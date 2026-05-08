@@ -26,6 +26,9 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+  * {
+    box-shadow: none !important;
+  }
   .glass-card {
     @apply bg-[#1c1c1e] border border-white/5 rounded-2xl;
   }

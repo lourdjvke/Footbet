@@ -58,11 +58,34 @@ function SkeletonMatchCard() {
   );
 }
 
+import { useSearchParams } from "react-router-dom";
+
 export function WorldCupPage() {
-  const [activeTab, setActiveTab] = useState<"Overview" | "Matches" | "Standings">("Overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  
+  const resolveTab = (tabParam: string | null): "Overview" | "Matches" | "Standings" => {
+    if (tabParam === "matches") return "Matches";
+    if (tabParam === "standings") return "Standings";
+    return "Overview";
+  };
+
+  const [activeTab, setActiveTab] = useState<"Overview" | "Matches" | "Standings">(resolveTab(initialTab));
   const [selectedGroup, setSelectedGroup] = useState<string>("All Groups");
   const [events, setEvents] = useState<WorldCupEvent[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const currentTab = resolveTab(searchParams.get("tab"));
+    if (currentTab !== activeTab) {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: "Overview" | "Matches" | "Standings") => {
+    setActiveTab(tab);
+    setSearchParams({ tab: tab.toLowerCase() });
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -187,7 +210,7 @@ export function WorldCupPage() {
             {["Overview", "Matches", "Standings"].map((tab) => (
                <button
                   key={tab}
-                  onClick={() => setActiveTab(tab as any)}
+                  onClick={() => handleTabChange(tab as any)}
                   className={cn(
                      "px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
                      activeTab === tab ? "bg-white/10 text-white shadow-lg" : "text-text-muted hover:text-white"
@@ -214,7 +237,7 @@ export function WorldCupPage() {
                   <div className="flex items-center justify-between">
                      <h2 className="text-xl sm:text-2xl font-display font-bold">Featured Matches</h2>
                      <button 
-                        onClick={() => setActiveTab("Matches")}
+                        onClick={() => handleTabChange("Matches")}
                         className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-3 sm:px-4 py-2 rounded-xl"
                      >
                         Full schedule <ArrowRight className="w-4 h-4" />
@@ -250,7 +273,7 @@ export function WorldCupPage() {
                   
                   <div className="rounded-3xl bg-blue-700 p-6 text-white">
                      <h4 className="font-bold text-base sm:text-lg mb-2">Watch Live</h4>
-                     <p className="text-white/80 text-xs sm:text-sm mb-4">Registration for tickets is now open on the official FIFA platform. Don't miss out!</p>
+                     <p className="text-white/80 text-xs sm:text-sm mb-4">Registration for tickets is now open on our official FIFA verified portal. Don't miss out!</p>
                      <button className="w-full py-3 rounded-2xl bg-white text-blue-700 font-bold text-sm transition-all active:scale-95">
                         Register Interest
                      </button>

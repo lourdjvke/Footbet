@@ -28,11 +28,11 @@ export function LeftSidebar() {
         {/* MVP Card */}
         <div className="relative overflow-hidden rounded-xl bg-orange-900/40 border border-orange-500/20 p-4 mb-4 flex items-center justify-between group cursor-pointer hover:bg-orange-900/50 transition-colors">
           <div className="relative z-10 flex-1">
-            <div className="text-xs text-orange-200/80 mb-1 font-medium tracking-wide">— MVP Of The Day</div>
+            <div className="text-xs text-orange-200/80 mb-1 font-medium tracking-wide">— MVP Highlight</div>
             <h3 className="font-semibold text-white mb-0.5">{mvp.name}</h3>
             <p className="text-xs text-orange-200/60 mb-2 truncate max-w-[120px]">{mvp.description}</p>
             <div className="flex items-center gap-2 text-xs">
-              <img src={mvp.teamBadge} className="w-3 h-3 rounded-sm object-cover bg-white/10" alt="badge" />
+              {mvp.teamBadge && <img src={mvp.teamBadge} className="w-3 h-3 rounded-sm object-cover bg-white/10" alt="badge" />}
               <span className="text-white truncate max-w-[100px]">{mvp.team}</span>
             </div>
           </div>

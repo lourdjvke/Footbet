@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, Calendar, Home, Search, Settings, Trophy, Users, Activity, BarChart2, Maximize2, Menu } from "lucide-react";
+import { Calendar, Home, Search, Settings, Trophy, Users, Wallet, Activity, BarChart2, Maximize2, Menu } from "lucide-react";
 import { cn } from "../lib/utils";
 
 import { RotatingWorldCupIcon } from "./RotatingWorldCupIcon";
@@ -20,13 +20,15 @@ export function TopNav({
         <button onClick={onMenuClick} className="lg:hidden p-1 mr-1 text-text-muted hover:text-white transition-colors">
            <Menu className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
-          <RotatingWorldCupIcon className="w-full h-full object-cover" />
-        </div>
-        <span className="font-semibold text-lg tracking-tight">Footbet</span>
+        <button onClick={() => onNavigate?.("dashboard")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
+            <RotatingWorldCupIcon className="h-full w-auto object-cover max-w-none" />
+          </div>
+          <span className="font-semibold text-lg tracking-tight text-white">Footbet</span>
+        </button>
       </div>
 
-      {/* Main Nav Pills */}
+      {/* Main Nav Pills - Hidden on mobile, sticky bottom on mobile later */}
       <nav className="hidden md:flex items-center gap-2 bg-white/5 rounded-full p-1 border border-white/10">
         <NavItem 
           active={currentPage === "dashboard"} 
@@ -40,7 +42,12 @@ export function TopNav({
           label="World Cup" 
           onClick={() => onNavigate?.("world-cup")}
         />
-        <NavItem icon={<Users className="w-4 h-4" />} label="Room" />
+        <NavItem 
+          active={currentPage === "wallet"} 
+          icon={<Wallet className="w-4 h-4" />} 
+          label="Wallet" 
+          onClick={() => onNavigate?.("wallet")}
+        />
         <NavItem icon={<Settings className="w-4 h-4" />} />
       </nav>
 
@@ -56,13 +63,6 @@ export function TopNav({
 
       {/* Right Controls */}
       <div className="flex items-center gap-4">
-        <button className="p-2 text-text-muted hover:text-white transition-colors">
-          <Search className="w-5 h-5" />
-        </button>
-        <button className="p-2 text-text-muted hover:text-white transition-colors relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full" />
-        </button>
         <div className="relative group hidden sm:block">
           <button className="p-2 text-text-muted hover:text-white transition-colors flex items-center">
             <Settings className="w-5 h-5" />

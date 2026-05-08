@@ -377,19 +377,24 @@ export function useSportsData() {
       }
 
       const liveOnes = mappedMatches.filter(m => m.status === 'live');
-      let newMvp = { name: "Lamine Yamal", description: `Key Midfielder (Barcelona)`, team: "Barcelona", teamBadge: "https://apiv3.apifootball.com/badges/97_barcelona.jpg", age: 18, score: 94, image: "https://images.unsplash.com/photo-1623345805780-8f01f714e65f?q=80&w=300&auto=format&fit=crop" };
-
-      try {
-         const scorersData = await safeFetch(`action=get_topscorers&league_id=${LEAGUES[0].id}`);
-         if (Array.isArray(scorersData) && scorersData.length > 0) {
-            const top = scorersData[0];
-            newMvp = {
-               name: top.player_name, description: `Top Scorer (${top.goals} Goals)`, team: top.team_name,
-               teamBadge: standingsMap[LEAGUES[0].name]?.find(t => t.name === top.team_name)?.badge || null,
-               age: 24, score: 90 + Math.min(9, top.goals), image: "https://images.unsplash.com/photo-1543326132-8353dee5f577?q=80&w=300&auto=format&fit=crop"
-            };
-         }
-      } catch (e) {}
+      const MVP_CANDIDATES = [
+        { name: "Harry Kane", team: "Bayern München", league: "Bundesliga", goals: 33, id: "144553" },
+        { name: "Erling Haaland", team: "Man City", league: "Premier League", goals: 25, id: "839956" },
+        { name: "Kylian Mbappé", team: "Real Madrid", league: "La Liga", goals: 24, id: "826643" },
+        { name: "Igor Thiago", team: "Brentford", league: "Premier League", goals: 22, id: "991011" },
+        { name: "Vedat Muriqi", team: "Mallorca", league: "La Liga", goals: 21, id: "344614" },
+      ];
+      const randomMvp = MVP_CANDIDATES[Math.floor(Math.random() * MVP_CANDIDATES.length)];
+      
+      let newMvp = { 
+        name: randomMvp.name, 
+        description: `Top Scorer (${randomMvp.goals} Goals)`, 
+        team: randomMvp.team, 
+        teamBadge: "", // Or maybe an api link or just empty string 
+        age: 26, 
+        score: 95, 
+        image: `https://api.sofascore.app/api/v1/player/${randomMvp.id}/image`
+      };
 
       const cache = {
         liveMatch: live,

@@ -60,7 +60,6 @@ export function CenterFeed() {
             <div className="flex justify-between items-center mb-5">
               <div className="flex items-center gap-2 text-text-muted">
                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                 <span className="text-xs uppercase tracking-wider font-semibold">Match Simulation Overview</span>
               </div>
               <div className="relative">
                  <select 
