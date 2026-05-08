@@ -4,6 +4,8 @@ import { Maximize2, ChevronLeft, ChevronRight, RefreshCw, Copy, Check } from "lu
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
+import { fetchWithCacheAndProxy } from "../lib/fetcher";
+
 export function RightSidebar() {
   const { allLiveMatches, allStandings, refreshing, liveMatchesLoading, refresh } = useSportsData();
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
@@ -46,17 +48,14 @@ export function RightSidebar() {
        
        console.log(`Fetching lineup for match ID: ${liveMatch.id}`);
        
-       fetch(`/api/lineups/${liveMatch.id}`)
-        .then(async r => {
-            const data = await r.json();
-            if (!r.ok) {
-                const errorStr = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
-                console.error("EXACT ERROR FROM API:", data);
-                throw new Error(errorStr);
-            }
-            return data;
-        })
+       const targetUrl = `https://www.sofascore.com/api/v1/event/${liveMatch.id}/lineups`;
+       const cachePath = `lineups/${liveMatch.id}`;
+       fetchWithCacheAndProxy(targetUrl, cachePath, 30 * 60 * 1000)
         .then(data => {
+            if (!data) {
+                setLineup({});
+                return;
+            }
             if (data.error) {
               const errorStr = typeof data.error === 'object' ? JSON.stringify(data.error, null, 2) : String(data.error);
               console.error("EXACT ERROR FROM API:", data);

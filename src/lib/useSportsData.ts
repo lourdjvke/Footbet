@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchWithCacheAndProxy } from './fetcher';
 
 export interface Team {
   id: string;
@@ -96,8 +97,9 @@ export function useSportsData() {
       try {
         const res = await fetch(`${baseUrl}/api/football?${query}`);
         if (res.ok) {
-           const data = await res.json();
-           // Football-API sometimes returns {error: "..."} in a 200 response
+           const text = await res.text();
+           if (text.trim().startsWith('<')) throw new Error("Received HTML instead of JSON from proxy");
+           const data = JSON.parse(text);
            if (data && data.error) throw new Error(data.error);
            return data;
         }
@@ -107,7 +109,9 @@ export function useSportsData() {
         try {
           const res = await fetch(`https://apiv3.apifootball.com/?${query}&APIkey=${API_KEY}`);
           if (!res.ok) throw new Error(`Direct API failed: ${res.status}`);
-          return await res.json();
+          const text = await res.text();
+          if (text.trim().startsWith('<')) throw new Error("Received HTML instead of JSON from direct API");
+          return JSON.parse(text);
         } catch (fallbackErr: any) {
           console.error(`[FETCH FATAL] Both proxy and direct fallback failed: ${fallbackErr.message}`);
           throw fallbackErr;
@@ -129,15 +133,39 @@ export function useSportsData() {
       
       try {
          console.log("FETCH START: Requesting Sofascore live events...");
-         const sofaRes = await fetch("/api/live-events");
-         if (!sofaRes.ok) {
-            console.error(`SCRAPING ERROR: Sofascore proxy returned status ${sofaRes.status}`);
-         }
-         if (sofaRes.ok) {
-            const sofaData = await sofaRes.json();
-            if (sofaData && sofaData.events && Array.isArray(sofaData.events)) {
-               console.log(`FETCH SUCCESS: Found ${sofaData.events.length} Sofascore live events.`);
-               const sofaMapped: Match[] = sofaData.events.map((m: any) => ({
+         const targetUrl = "https://www.sofascore.com/api/v1/sport/football/events/live";
+         const tryFootballApiFallback = async () => {
+            const footballApiKey = "f29d4c662ac81ed3a744727739add7a4a55e655c566695265112a2c9527bb7fb";
+            try {
+               console.log("[LIVE-EVENTS] Falling back to Football-API for live matches...");
+               const fbRes = await fetch(`https://apiv3.apifootball.com/?action=get_events&match_live=1&APIkey=${footballApiKey}`);
+               if (fbRes.ok) {
+                  const fbData = await fbRes.json();
+                  if (Array.isArray(fbData)) {
+                     return {
+                       events: fbData.map(m => ({
+                          id: m.match_id,
+                          homeTeam: { id: m.match_hometeam_id, name: m.match_hometeam_name, shortName: m.match_hometeam_name.substring(0,3).toUpperCase() },
+                          awayTeam: { id: m.match_awayteam_id, name: m.match_awayteam_name, shortName: m.match_awayteam_name.substring(0,3).toUpperCase() },
+                          homeScore: { current: Number(m.match_hometeam_score) },
+                          awayScore: { current: Number(m.match_awayteam_score) },
+                          status: { type: 'inprogress', description: m.match_status },
+                          startTimestamp: Math.floor(new Date(m.match_date + ' ' + m.match_time).getTime() / 1000)
+                       }))
+                     };
+                  }
+               }
+            } catch (e) {
+               console.error("[LIVE-EVENTS] Football-API fallback failed", e);
+            }
+            return { events: [] };
+         };
+
+         const sofaData = await fetchWithCacheAndProxy(targetUrl, "liveEvents", 15 * 60 * 1000, tryFootballApiFallback);
+
+         if (sofaData && sofaData.events && Array.isArray(sofaData.events)) {
+            console.log(`FETCH SUCCESS: Found ${sofaData.events.length} Sofascore live events.`);
+            const sofaMapped: Match[] = sofaData.events.map((m: any) => ({
                   id: String(m.id),
                   isSofascore: true,
                   homeTeam: {
@@ -180,7 +208,6 @@ export function useSportsData() {
                   matchResults.push(sofaMapped);
                }
             }
-         }
       } catch(e) {
          console.error("RAW ERROR: Live Events fetch failed", e);
       }

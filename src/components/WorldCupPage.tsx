@@ -4,6 +4,8 @@ import { Trophy, Calendar, Info, Users, ChevronRight, ArrowRight, BarChart2, Act
 import { RotatingWorldCupIcon } from "./RotatingWorldCupIcon";
 import { cn } from "../lib/utils";
 
+import { fetchWithCacheAndProxy } from "../lib/fetcher";
+
 interface Team {
   name: string;
   slug: string;
@@ -64,14 +66,8 @@ export function WorldCupPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/world-cup-events")
-      .then(async r => {
-         if (!r.ok) {
-           const errText = await r.text();
-           throw new Error(`HTTP ${r.status}: ${errText}`);
-         }
-         return r.json();
-      })
+    const targetUrl = "https://www.sofascore.com/api/v1/unique-tournament/16/season/68512/events";
+    fetchWithCacheAndProxy(targetUrl, "worldCupEvents", 60 * 60 * 1000)
       .then(data => {
         if (data && data.events && Array.isArray(data.events) && data.events.length > 0) {
           console.log(`[WC26] Fetched ${data.events.length} events from server.`);
