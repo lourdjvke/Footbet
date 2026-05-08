@@ -32,15 +32,23 @@ export function LeftSidebar() {
             <h3 className="font-semibold text-white mb-0.5">{mvp.name}</h3>
             <p className="text-xs text-orange-200/60 mb-2 truncate max-w-[120px]">{mvp.description}</p>
             <div className="flex items-center gap-2 text-xs">
-              {mvp.teamBadge && <img src={mvp.teamBadge} className="w-3 h-3 rounded-sm object-cover bg-white/10" alt="badge" />}
+              {mvp.teamBadge && <img src={mvp.teamBadge} className="w-3 h-3 rounded-sm object-cover bg-white/10" alt="badge" referrerPolicy="no-referrer" />}
               <span className="text-white truncate max-w-[100px]">{mvp.team}</span>
             </div>
           </div>
-          <div className="relative z-10 flex flex-col items-center justify-center">
-             <div className="w-14 h-14 rounded-full border-2 border-orange-500/30 overflow-hidden bg-black/20 p-0.5">
-                <img src={mvp.image} alt={mvp.name} className="w-full h-full object-cover rounded-full" />
+          <div className="relative z-10 flex flex-col items-center justify-center -mr-2">
+             <div className="w-16 h-16 rounded-full border-2 border-orange-500/30 overflow-hidden bg-black/20 p-0.5 mt-2">
+                <img src={mvp.image} alt={mvp.name} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
              </div>
           </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <StatBox icon={<Target className="w-3 h-3"/>} title="Matches" value="8" subValue="4 Upcoming" />
+          <StatBox title="Goals" value={mvp.goals || "23"} subValue="2.9 Per match" isAccent />
+          <StatBox icon={<Activity className="w-3 h-3"/>} title="Match Upsets" value="2" subValue="30% Win probability" />
+          <StatBox title="Pressing Intensity" value="9.4" subValue="average" highlightSubValue="6.1 press peak" />
         </div>
       </div>
 
@@ -87,11 +95,29 @@ export function LeftSidebar() {
   )
 }
 
+function StatBox({ title, icon, value, subValue, highlightSubValue, isAccent }: any) {
+  return (
+    <div className="bg-white/5 border border-white/5 rounded-lg p-3">
+      <div className="flex items-center gap-1.5 text-xs text-text-muted mb-2">
+        {title} {icon && icon}
+      </div>
+      <div className="flex items-baseline gap-1.5 mb-1">
+        <span className="text-lg font-semibold">{value}</span>
+        {isAccent && <span className="text-xs text-text-muted">Goals</span>}
+        {!isAccent && title.includes("Upsets") && <span className="text-xs text-text-muted">Upsets</span>}
+      </div>
+      <div className="text-[10px] text-text-muted">
+         {subValue} <br/> {highlightSubValue && <span className="text-green-400 mt-0.5 block">{highlightSubValue}</span>}
+      </div>
+    </div>
+  )
+}
+
 function ProbabilityRow({ name, flag, percent, trend }: any) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <img src={flag} alt={name} className="w-6 h-6 rounded-full object-cover border border-white/10" />
+        {flag ? <img src={flag} alt={name} className="w-6 h-6 rounded-full object-cover border border-white/10" referrerPolicy="no-referrer" /> : <div className="w-6 h-6 rounded-full border border-white/10 bg-white/5" />}
         <span className="text-sm font-medium">{name}</span>
       </div>
       <div className="flex items-center gap-3 flex-1 px-4 max-w-[120px]">

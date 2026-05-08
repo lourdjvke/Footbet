@@ -13,7 +13,7 @@ import { RightSidebar } from "./components/RightSidebar";
 import { WorldCupPage } from "./components/WorldCupPage";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { WalletPage } from "./components/WalletPage";
-import { useSportsData } from "./lib/useSportsData";
+import { SportsDataProvider, useSportsData } from "./lib/useSportsData";
 import { Search as SearchIcon, X } from "lucide-react";
 
 function Dashboard() {
@@ -31,7 +31,7 @@ function Dashboard() {
 function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { standingsLoaded, allLiveMatches } = useSportsData();
+  const { standingsLoaded } = useSportsData();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -171,7 +171,9 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
-      <AppContent />
+      <SportsDataProvider>
+        <AppContent />
+      </SportsDataProvider>
     </Router>
   );
 }

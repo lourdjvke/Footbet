@@ -91,9 +91,9 @@ export function CenterFeed() {
                           style={{ backgroundColor: match.homeTeam?.teamColors?.primary || 'rgba(255,255,255,0.1)' }}
                        >
                           {match.homeTeam?.country?.alpha2 ? (
-                             <img src={`https://flagcdn.com/${match.homeTeam.country.alpha2.toLowerCase()}.svg`} alt={match.homeTeam?.name} className="w-full h-full object-cover scale-110" />
+                             <img src={`https://flagcdn.com/${match.homeTeam.country.alpha2.toLowerCase()}.svg`} alt={match.homeTeam?.name} className="w-full h-full object-cover scale-110" referrerPolicy="no-referrer" />
                           ) : (
-                             <img src={match.homeTeam?.badge} alt={match.homeTeam?.name} className="w-10 h-10 object-contain" />
+                             <img src={match.homeTeam?.badge} alt={match.homeTeam?.name} className="w-10 h-10 object-contain" referrerPolicy="no-referrer" />
                           )}
                        </div>
                        <span className="text-xs font-semibold text-center leading-tight truncate w-full">{match.homeTeam?.shortName}</span>
@@ -105,9 +105,9 @@ export function CenterFeed() {
                           style={{ backgroundColor: match.awayTeam?.teamColors?.primary || 'rgba(255,255,255,0.1)' }}
                        >
                           {match.awayTeam?.country?.alpha2 ? (
-                             <img src={`https://flagcdn.com/${match.awayTeam.country.alpha2.toLowerCase()}.svg`} alt={match.awayTeam?.name} className="w-full h-full object-cover scale-110" />
+                             <img src={`https://flagcdn.com/${match.awayTeam.country.alpha2.toLowerCase()}.svg`} alt={match.awayTeam?.name} className="w-full h-full object-cover scale-110" referrerPolicy="no-referrer" />
                           ) : (
-                             <img src={match.awayTeam?.badge} alt={match.awayTeam?.name} className="w-10 h-10 object-contain" />
+                             <img src={match.awayTeam?.badge} alt={match.awayTeam?.name} className="w-10 h-10 object-contain" referrerPolicy="no-referrer" />
                           )}
                        </div>
                        <span className="text-xs font-semibold text-center leading-tight truncate w-full">{match.awayTeam?.shortName}</span>
@@ -141,7 +141,7 @@ export function CenterFeed() {
                {standings.map((team) => (
                   <div key={team.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                      <div className="flex items-center gap-3 overflow-hidden flex-1">
-                        <img src={team.badge} alt={team.name} className="w-6 h-6 rounded-full object-cover border border-white/10 shrink-0 bg-white/10" />
+                        <img src={team.badge} alt={team.name} className="w-6 h-6 rounded-full object-cover border border-white/10 shrink-0 bg-white/10" referrerPolicy="no-referrer" />
                         <span className="text-sm font-medium truncate">{team.name}</span>
                      </div>
                      <div className="flex items-center gap-2 text-sm shrink-0 ml-2">

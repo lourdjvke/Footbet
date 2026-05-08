@@ -47,10 +47,12 @@ export async function fetchWithCacheAndProxy(
     console.error("[SETTINGS ERROR] Failed to check fetching status:", err);
   }
 
+  let staleData = null;
   try {
     const snapshot = await get(cacheRef);
     if (snapshot.exists()) {
       const data = snapshot.val();
+      staleData = data.payload;
       const now = Date.now();
       if (!isLiveEnabled || (now - data.timestamp < cacheTtlMs)) {
         console.log(`[CACHE HIT] ${cachePath}${!isLiveEnabled ? " (FORCED)" : ""}`);
@@ -66,7 +68,7 @@ export async function fetchWithCacheAndProxy(
 
   if (!isLiveEnabled) {
     console.log(`[SCRAPE SKIPPED] Live fetching is disabled via admin.`);
-    return null;
+    return staleData;
   }
 
   let successData = null;
@@ -128,14 +130,18 @@ export async function fetchWithCacheAndProxy(
   }
 
   if (successData && rtdb) {
-    try {
-      await set(cacheRef, { timestamp: Date.now(), payload: successData });
-      console.log(`[CACHE SAVED] ${cachePath}`);
-    } catch (err) {
-      console.error(`[CACHE ERROR] Failed saving ${cachePath}:`, err);
+    // Only try to save to RTDB if we are on the server (Node.js environment)
+    const isServer = typeof process !== 'undefined' && process.release && process.release.name === 'node';
+    if (isServer) {
+      try {
+        await set(cacheRef, { timestamp: Date.now(), payload: successData });
+        console.log(`[CACHE SAVED] ${cachePath}`);
+      } catch (err) {
+        console.error(`[CACHE ERROR] Failed saving ${cachePath}:`, err);
+      }
     }
     return successData;
   }
   
-  return successData;
+  return staleData; // Return stale data if live scrape and fallback both fail
 }

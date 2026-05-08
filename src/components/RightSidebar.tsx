@@ -7,19 +7,32 @@ import { motion, AnimatePresence } from "motion/react";
 import { fetchWithCacheAndProxy } from "../lib/fetcher";
 
 export function RightSidebar() {
-  const { allLiveMatches, allStandings, refreshing, liveMatchesLoading, refresh } = useSportsData();
+  const { allLiveMatches, allStandings, refreshing, liveMatchesLoading, refresh, loading } = useSportsData();
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("Lineup");
   const [activeGroup, setActiveGroup] = useState("Premier League");
   const [lineup, setLineup] = useState<any>(null);
-  const [odds, setOdds] = useState<any>(null);
   const [loadingLineup, setLoadingLineup] = useState(false);
-  const [loadingOdds, setLoadingOdds] = useState(false);
   const [lineupError, setLineupError] = useState<string | null>(null);
-  const [oddsError, setOddsError] = useState<string | null>(null);
+  
+  const [statistics, setStatistics] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  
+  const [odds, setOdds] = useState<any>(null);
+  const [loadingOdds, setLoadingOdds] = useState(false);
+  
   const [copied, setCopied] = useState(false);
 
-  const liveMatch = allLiveMatches[currentMatchIndex] || allLiveMatches[0];
+  // Derive liveMatch from index but guard against empty list
+  const liveMatch = allLiveMatches.length > 0 ? (allLiveMatches[currentMatchIndex] || allLiveMatches[0]) : null;
+
+  // Emergency ID fixer: if the current match is Sofascore but ID is suspiciously short
+  // we try to find a match with the same team names in the full list that has a proper ID
+  useEffect(() => {
+    if (liveMatch && liveMatch.isSofascore && liveMatch.id.length < 5) {
+       console.warn(`[DATA] Short ID for match: ${liveMatch.homeTeam.name} vs ${liveMatch.awayTeam.name}`);
+    }
+  }, [liveMatch?.id]);
 
   const copyId = () => {
     if (liveMatch?.id) {
@@ -37,75 +50,110 @@ export function RightSidebar() {
   }, [allLiveMatches.length, currentMatchIndex]);
 
   useEffect(() => {
-    if (activeTab === "Lineup" && liveMatch && liveMatch.id) {
-       // Only try to fetch lineups for Sofascore matches
-       if (!liveMatch.isSofascore) {
-           setLineupError("Lineup not available for match");
-           setLoadingLineup(false);
-           return;
+    if (activeTab === "Lineup" && liveMatch?.id && liveMatch.isSofascore) {
+       // Validate ID: Sofascore IDs are typically long numbers
+       const numericId = parseInt(liveMatch.id);
+       if (isNaN(numericId) || liveMatch.id.length < 5) {
+          setLineupError("Invalid Match ID for Lineup");
+          setLoadingLineup(false);
+          return;
        }
-
        setLineup(null);
        setLineupError(null);
        setLoadingLineup(true);
-       
-       console.log(`Fetching lineup for match ID: ${liveMatch.id}`);
-       
        const targetUrl = `https://www.sofascore.com/api/v1/event/${liveMatch.id}/lineups`;
        const cachePath = `lineups/${liveMatch.id}`;
-       fetchWithCacheAndProxy(targetUrl, cachePath, 30 * 60 * 1000)
-        .then(data => {
-            if (!data) {
-                setLineup({});
-                return;
-            }
-            if (data.error) {
-              const errorStr = typeof data.error === 'object' ? JSON.stringify(data.error, null, 2) : String(data.error);
-              console.error("EXACT ERROR FROM API:", data);
-              setLineupError(errorStr);
-            } else {
-              setLineup(data);
-            }
-            setLoadingLineup(false);
-        })
-        .catch(e => {
-            console.error("Lineup Fetch Error:", e);
-            setLineupError(e.message);
-            setLoadingLineup(false);
-        });
+       let isSubscribed = true;
+       import("firebase/database").then(({ ref, onValue }) => {
+         import("../lib/firebase").then(({ rtdb }) => {
+           if (!rtdb || !isSubscribed) return;
+           const unsubscribe = onValue(ref(rtdb, cachePath), (snapshot) => {
+             if (snapshot.exists()) {
+                const data = snapshot.val().payload;
+                if (data && !data.error) setLineup(data);
+                else if (data?.error) setLineupError(String(data.error));
+                setLoadingLineup(false);
+             }
+           });
+           fetchWithCacheAndProxy(targetUrl, cachePath, 30 * 60 * 1000).then(data => {
+             if (!isSubscribed) return;
+             if (!data) setLineup({});
+             else if (data.error) setLineupError(String(data.error));
+             else setLineup(data);
+             setLoadingLineup(false);
+           }).catch(e => {
+             if (!isSubscribed) return;
+             if (!lineup) setLineupError(e.message);
+             setLoadingLineup(false);
+           });
+           return () => { isSubscribed = false; unsubscribe(); };
+         });
+       });
     }
   }, [activeTab, liveMatch?.id]);
 
   useEffect(() => {
-    if (activeTab === "Odds" && liveMatch && liveMatch.id) {
-       
+    if (activeTab === "Statistics" && liveMatch?.id && liveMatch.isSofascore) {
+       if (liveMatch.id.length < 8) return;
+       setStatistics(null);
+       setLoadingStats(true);
+       const targetUrl = `https://www.sofascore.com/api/v1/event/${liveMatch.id}/statistics`;
+       const cachePath = `statistics/${liveMatch.id}`;
+       let isSubscribed = true;
+       import("firebase/database").then(({ ref, onValue }) => {
+         import("../lib/firebase").then(({ rtdb }) => {
+           if (!rtdb || !isSubscribed) return;
+           const unsubscribe = onValue(ref(rtdb, cachePath), (snapshot) => {
+             if (snapshot.exists()) {
+                const data = snapshot.val().payload;
+                if (data && data.statistics) setStatistics(data.statistics);
+                setLoadingStats(false);
+             }
+           });
+           fetchWithCacheAndProxy(targetUrl, cachePath, 30 * 60 * 1000).then(data => {
+             if (!isSubscribed) return;
+             if (data && data.statistics) setStatistics(data.statistics);
+             setLoadingStats(false);
+           }).catch(() => {
+             if (!isSubscribed) return;
+             setLoadingStats(false);
+           });
+           return () => { isSubscribed = false; unsubscribe(); };
+         });
+       });
+    }
+  }, [activeTab, liveMatch?.id]);
+
+  useEffect(() => {
+    if (activeTab === "Insights" && liveMatch?.id && liveMatch.isSofascore) {
+       if (liveMatch.id.length < 8) return;
        setOdds(null);
-       setOddsError(null);
        setLoadingOdds(true);
-       
-       console.log(`Fetching odds for match ID: ${liveMatch.id}`);
-       
+       // Sofascore standard odds url
        const targetUrl = `https://www.sofascore.com/api/v1/event/${liveMatch.id}/odds/1/all`;
        const cachePath = `odds/${liveMatch.id}`;
-       fetchWithCacheAndProxy(targetUrl, cachePath, 5 * 60 * 1000)
-        .then(data => {
-            if (!data) {
-                setOdds({});
-                return;
-            }
-            if (data.error) {
-              const errorStr = typeof data.error === 'object' ? JSON.stringify(data.error, null, 2) : String(data.error);
-              setOddsError(errorStr);
-            } else {
-              setOdds(data);
-            }
-            setLoadingOdds(false);
-        })
-        .catch(e => {
-            console.error("Odds Fetch Error:", e);
-            setOddsError(e.message);
-            setLoadingOdds(false);
-        });
+       let isSubscribed = true;
+       import("firebase/database").then(({ ref, onValue }) => {
+         import("../lib/firebase").then(({ rtdb }) => {
+           if (!rtdb || !isSubscribed) return;
+           const unsubscribe = onValue(ref(rtdb, cachePath), (snapshot) => {
+             if (snapshot.exists()) {
+                const data = snapshot.val().payload;
+                if (data && data.markets) setOdds(data.markets);
+                setLoadingOdds(false);
+             }
+           });
+           fetchWithCacheAndProxy(targetUrl, cachePath, 30 * 60 * 1000).then(data => {
+             if (!isSubscribed) return;
+             if (data && data.markets) setOdds(data.markets);
+             setLoadingOdds(false);
+           }).catch(() => {
+             if (!isSubscribed) return;
+             setLoadingOdds(false);
+           });
+           return () => { isSubscribed = false; unsubscribe(); };
+         });
+       });
     }
   }, [activeTab, liveMatch?.id]);
 
@@ -157,7 +205,7 @@ export function RightSidebar() {
          >
             <div className="flex items-center gap-1.5">
                <span className="text-[9px] font-bold text-white/40 group-hover/copy:text-white/70 transition-colors uppercase tracking-tight">
-                  {copied ? "Copied" : `MTH ID: ${liveMatch.id.substring(0, 8)}`}
+                  {copied ? "Copied" : `MTH ID: ${liveMatch.id}`}
                </span>
                {copied ? <Check className="w-2.5 h-2.5 text-green-400" /> : <Copy className="w-2.5 h-2.5 text-white/20 group-hover/copy:text-white/50" />}
             </div>
@@ -213,9 +261,10 @@ export function RightSidebar() {
                          src={`https://flagcdn.com/${liveMatch.homeTeam.country.alpha2.toLowerCase()}.svg`} 
                          alt={liveMatch.homeTeam?.name} 
                          className="w-full h-full object-cover scale-110" 
+                         referrerPolicy="no-referrer"
                        />
                      ) : (
-                       <img src={liveMatch.homeTeam?.badge} alt={liveMatch.homeTeam?.name} className="w-12 h-12 object-contain rounded-sm" />
+                       <img src={liveMatch.homeTeam?.badge} alt={liveMatch.homeTeam?.name} className="w-12 h-12 object-contain rounded-sm" referrerPolicy="no-referrer" />
                      )}
                    </div>
                    <span className="text-sm font-semibold text-center truncate w-full">{liveMatch.homeTeam?.shortName}</span>
@@ -240,9 +289,10 @@ export function RightSidebar() {
                          src={`https://flagcdn.com/${liveMatch.awayTeam.country.alpha2.toLowerCase()}.svg`} 
                          alt={liveMatch.awayTeam?.name} 
                          className="w-full h-full object-cover scale-110" 
+                         referrerPolicy="no-referrer"
                        />
                      ) : (
-                       <img src={liveMatch.awayTeam?.badge} alt={liveMatch.awayTeam?.name} className="w-12 h-12 object-contain rounded-sm" />
+                       <img src={liveMatch.awayTeam?.badge} alt={liveMatch.awayTeam?.name} className="w-12 h-12 object-contain rounded-sm" referrerPolicy="no-referrer" />
                      )}
                    </div>
                    <span className="text-sm font-semibold text-center truncate w-full">{liveMatch.awayTeam?.shortName}</span>
@@ -329,7 +379,23 @@ export function RightSidebar() {
             )}
             {activeTab === "Statistics" && (
                 <div className="w-full flex flex-col gap-3 text-xs max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
-                   {liveMatch.statistics && liveMatch.statistics.length > 0 ? (
+                   {loadingStats ? (
+                      <div className="text-center py-4 flex flex-col items-center gap-2">
+                         <div className="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                         <span className="text-text-muted">Loading Statistics...</span>
+                      </div>
+                   ) : statistics && statistics.length > 0 && statistics[0].groups ? (
+                      statistics[0].groups.map((group: any) => (
+                         group.statisticsItems?.slice(0, 3).map((stat: any, index: number) => (
+                           <StatBar 
+                              key={`${stat.name}-${index}`} 
+                              label={String(stat.name)} 
+                              left={parseFloat(String(stat.home).replace('%','')) || 0} 
+                              right={parseFloat(String(stat.away).replace('%','')) || 0} 
+                           />
+                         ))
+                      )).flat().slice(0, 5)
+                   ) : liveMatch.statistics && liveMatch.statistics.length > 0 ? (
                       liveMatch.statistics.map((stat: any, index: number) => (
                          <StatBar 
                             key={`${stat.type}-${index}`} 
@@ -347,34 +413,35 @@ export function RightSidebar() {
                    )}
                 </div>
             )}
-            {activeTab === "Odds" && (
-                <div className="flex flex-col gap-3 w-full text-xs max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-                    {loadingOdds ? (
-                       <div className="text-center text-text-muted py-4 flex flex-col items-center gap-2">
+            {activeTab === "Insights" && (
+                <div className="text-xs text-center w-full text-white/80 px-4 leading-relaxed">
+                   {loadingOdds ? (
+                      <div className="text-center py-4 flex flex-col items-center gap-2">
                          <div className="w-4 h-4 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                         <span>Loading Odds...</span>
-                       </div>
-                    ) : oddsError ? (
-                        <div className="text-center text-text-muted italic py-4">Odds not available</div>
-                    ) : odds && odds.markets ? (
-                        <>
-                           {odds.markets.slice(0, 3).map((market: any) => (
-                               <div key={market.id} className="bg-white/5 p-2 rounded-lg">
-                                 <div className="font-semibold text-white mb-2">{market.marketName}</div>
-                                 <div className="grid grid-cols-3 gap-1">
-                                    {market.choices.map((choice: any) => (
-                                        <div key={choice.sourceId} className="flex flex-col items-center bg-black/20 p-1 rounded">
-                                            <span className="text-[9px] text-text-muted">{choice.name}</span>
-                                            <span className="font-bold text-orange-400">{choice.fractionalValue}</span>
-                                        </div>
-                                    ))}
-                                 </div>
+                         <span className="text-text-muted">Loading Odds...</span>
+                      </div>
+                   ) : odds && odds.length > 0 ? (
+                      <div className="flex flex-col gap-3">
+                         {odds.slice(0, 2).map((market: any, idx: number) => (
+                            <div key={idx} className="bg-black/20 p-2 rounded-lg border border-white/5">
+                               <div className="text-[10px] text-text-muted uppercase mb-1.5">{market.marketName}</div>
+                               <div className="flex justify-center gap-2">
+                                  {market.choices?.map((choice: any, cI: number) => (
+                                     <div key={cI} className="px-2 py-1 bg-white/5 rounded flex-1 flex justify-between items-center text-[10px]">
+                                        <span className="text-white/60">{choice.name}</span>
+                                        <span className="text-orange-400 font-bold">{choice.fractionalValue || choice.initialFractionalValue}</span>
+                                     </div>
+                                  ))}
                                </div>
-                           ))}
-                        </>
-                    ) : (
-                        <div className="text-center text-text-muted italic py-4">No odds data</div>
-                    )}
+                            </div>
+                         ))}
+                      </div>
+                   ) : (
+                      <>
+                         <p><span className="font-semibold text-blue-400">{liveMatch.homeTeam?.shortName || ''}</span> vs <span className="font-semibold text-orange-400">{liveMatch.awayTeam?.shortName || ''}</span></p>
+                         <p className="mt-2 text-[10px] text-text-muted">Live odds fetching or unavailable</p>
+                      </>
+                   )}
                 </div>
             )}
          </div>
@@ -384,7 +451,7 @@ export function RightSidebar() {
             <Tab label="Timeline" active={activeTab === "Timeline"} onClick={() => setActiveTab("Timeline")} />
             <Tab label="Lineup" active={activeTab === "Lineup"} onClick={() => setActiveTab("Lineup")} />
             <Tab label="Stats" active={activeTab === "Statistics"} onClick={() => setActiveTab("Statistics")} />
-            <Tab label="Odds" active={activeTab === "Odds"} onClick={() => setActiveTab("Odds")} />
+            <Tab label="Insights" active={activeTab === "Insights"} onClick={() => setActiveTab("Insights")} />
          </div>
 
          {allLiveMatches.length > 1 && (
@@ -443,7 +510,7 @@ export function RightSidebar() {
                   <div key={team.id} className="flex items-center text-sm py-2 hover:bg-white/5 rounded px-1 transition-colors">
                      <div className="w-6 text-center text-text-muted font-medium">{index + 1}</div>
                      <div className="flex-1 flex items-center gap-2 ml-2 overflow-hidden">
-                        <img src={team.badge} alt={team.name} className="w-5 h-5 rounded-full bg-white/10 object-cover border border-white/10" />
+                        <img src={team.badge} alt={team.name} className="w-5 h-5 rounded-full bg-white/10 object-cover border border-white/10" referrerPolicy="no-referrer" />
                         <span className="truncate flex-1">{team.name}</span>
                      </div>
                      <div className="w-6 text-center">{team.won}</div>

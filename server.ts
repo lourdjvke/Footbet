@@ -67,6 +67,36 @@ function getRandomSaKey() {
   return SA_KEYS[idx];
 }
 
+const processEventsPayload = (data: any) => {
+  if (data && data.events && Array.isArray(data.events)) {
+    data.events = data.events.map((e: any) => {
+      // STRICTLY extract the 'id' field DIRECTLY under the event object (root level)
+      const rootId = e.id || e.match_id || e.matchId;
+      
+      // Team IDs
+      const homeId = e.homeTeam?.id || e.match_hometeam_id || e.homeId || e.home_id;
+      const awayId = e.awayTeam?.id || e.match_awayteam_id || e.awayId || e.away_id;
+      
+      // Tournament ID
+      const tournamentId = e.tournament?.id || e.uniqueTournament?.id || e.league_id || e.tournamentId;
+
+      const processed = {
+        ...e,
+        // Explicitly set these at the root as requested
+        match_id: rootId ? String(rootId) : undefined,
+        home_id: homeId ? String(homeId) : undefined,
+        away_id: awayId ? String(awayId) : undefined,
+        tournament_id: tournamentId ? String(tournamentId) : undefined,
+        // Ensure 'id' is strictly the root one
+        id: rootId ? String(rootId) : e.id
+      };
+      
+      return processed;
+    });
+  }
+  return data;
+};
+
 async function fetchWithCacheAndProxy(
     targetUrl: string, 
     cachePath: string, 
@@ -172,6 +202,10 @@ async function fetchWithCacheAndProxy(
   }
 
   if (successData && rtdb) {
+    // Apply ID mapping for liveEvents
+    if (cachePath === "liveEvents") {
+       successData = processEventsPayload(successData);
+    }
     try {
       await set(cacheRef, { timestamp: Date.now(), payload: successData });
       console.log(`[CACHE SAVED] ${cachePath}`);
@@ -223,17 +257,70 @@ async function startServer() {
   const initializeSession = async () => {
     if (sessionInitialized) return;
     try {
-      console.log("Initializing Sofascore session...");
-      await client.get("https://www.sofascore.com/");
+      // Use ScrapingAnt to get a valid cookie/session if possible, 
+      // or just hit the homepage. If it fails,ScrapingAnt in fetchWithCacheAndProxy 
+      // will handle its own session/headers.
+      console.log("Initializing Sofascore session (Non-blocking)...");
+      await client.get("https://www.sofascore.com/", { timeout: 5000 });
       sessionInitialized = true;
       console.log("Session initialized.");
-    } catch (e) {
-      console.error("Failed to initialize Sofascore session");
+    } catch (e: any) {
+      console.warn(`[SOFASCORE] Session init failed: ${e.message}. Scraper will use proxy fallback.`);
     }
   };
 
   // Start initialization in background
   initializeSession();
+
+  // Background update task for Live Events
+  const updateLiveEventsBackground = async () => {
+    if (!rtdb) return;
+    const targetUrl = "https://www.sofascore.com/api/v1/sport/football/events/live";
+    const cachePath = "liveEvents";
+    
+    const tryFootballApiFallback = async () => {
+       const footballApiKey = "f29d4c662ac81ed3a744727739add7a4a55e655c566695265112a2c9527bb7fb";
+       try {
+          const fbRes = await fetch(`https://apiv3.apifootball.com/?action=get_events&match_live=1&APIkey=${footballApiKey}`);
+          if (fbRes.ok) {
+             const fbData = await fbRes.json();
+             if (Array.isArray(fbData)) {
+                return {
+                  events: fbData.map(m => ({
+                     id: m.match_id,
+                     match_id: m.match_id,
+                     homeTeam: { id: m.match_hometeam_id, name: m.match_hometeam_name, shortName: m.match_hometeam_name.substring(0,3).toUpperCase() },
+                     home_id: m.match_hometeam_id,
+                     awayTeam: { id: m.match_awayteam_id, name: m.match_awayteam_name, shortName: m.match_awayteam_name.substring(0,3).toUpperCase() },
+                     away_id: m.match_awayteam_id,
+                     homeScore: { current: Number(m.match_hometeam_score) },
+                     awayScore: { current: Number(m.match_awayteam_score) },
+                     status: { type: 'inprogress', description: m.match_status },
+                     startTimestamp: Math.floor(new Date(m.match_date + ' ' + m.match_time).getTime() / 1000)
+                  }))
+                };
+             }
+          }
+       } catch (e) {}
+       return { events: [] };
+    };
+
+    try {
+      console.log("[BACKGROUND] Updating Live Events...");
+      await fetchWithCacheAndProxy(targetUrl, cachePath, 0, tryFootballApiFallback);
+      console.log("[BACKGROUND] Live Events updated successfully.");
+    } catch (e: any) {
+      console.error("[BACKGROUND] Update failed:", e.message);
+    }
+  };
+
+  // Run background update every 1 minute
+  setInterval(updateLiveEventsBackground, 60000);
+  // Initial run sooner
+  setTimeout(() => {
+    console.log("[SERVER] Triggering initial background update...");
+    updateLiveEventsBackground();
+  }, 5000);
 
   // API health check
   app.get("/api/health", (req, res) => {
