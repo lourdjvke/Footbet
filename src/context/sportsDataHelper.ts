@@ -49,9 +49,11 @@ export interface StandingTeam extends Team {
 }
 
 export const mapSofaMatch = (m: any): Match => {
-  // STRICTLY extract the 'id' field DIRECTLY under the event object (root level)
-  const eventRootId = m.id || m.match_id || m.matchId || "";
-  const eventId = String(eventRootId);
+  // Use the root-level 'id' field — the Sofascore event ID that appears after
+  // 'crowdsourcingDataDisplayEnabled' in the API response. Use != null so that
+  // a valid ID of 0 is not skipped. Only fall back if e.id is truly absent.
+  const rootId = m.id != null ? m.id : (m.match_id ?? m.matchId ?? "");
+  const eventId = String(rootId);
   
   // Extract and normalize team IDs
   const homeTeamId = String(m.homeTeam?.id || m.match_hometeam_id || m.home_id || "");

@@ -70,27 +70,29 @@ function getRandomSaKey() {
 const processEventsPayload = (data: any) => {
   if (data && data.events && Array.isArray(data.events)) {
     data.events = data.events.map((e: any) => {
-      // STRICTLY extract the 'id' field DIRECTLY under the event object (root level)
-      const rootId = e.id || e.match_id || e.matchId;
-      
-      // Team IDs
-      const homeId = e.homeTeam?.id || e.match_hometeam_id || e.homeId || e.home_id;
-      const awayId = e.awayTeam?.id || e.match_awayteam_id || e.awayId || e.away_id;
-      
+      // Use ONLY the root-level 'id' field — the Sofascore event ID that appears
+      // after 'crowdsourcingDataDisplayEnabled' in the API response.
+      // We use != null so a valid ID of 0 is not skipped.
+      // Only fall back to match_id/matchId if e.id is genuinely absent (null/undefined).
+      const rootId = e.id != null ? e.id : (e.match_id ?? e.matchId);
+
+      // Team IDs — prefer nested objects, fall back to flat fields
+      const homeId = e.homeTeam?.id ?? e.match_hometeam_id ?? e.homeId ?? e.home_id;
+      const awayId = e.awayTeam?.id ?? e.match_awayteam_id ?? e.awayId ?? e.away_id;
+
       // Tournament ID
-      const tournamentId = e.tournament?.id || e.uniqueTournament?.id || e.league_id || e.tournamentId;
+      const tournamentId = e.tournament?.id ?? e.uniqueTournament?.id ?? e.league_id ?? e.tournamentId;
 
       const processed = {
         ...e,
-        // Explicitly set these at the root as requested
-        match_id: rootId ? String(rootId) : undefined,
-        home_id: homeId ? String(homeId) : undefined,
-        away_id: awayId ? String(awayId) : undefined,
-        tournament_id: tournamentId ? String(tournamentId) : undefined,
-        // Ensure 'id' is strictly the root one
-        id: rootId ? String(rootId) : e.id
+        // Overwrite id fields with the correctly resolved values
+        id: rootId != null ? String(rootId) : e.id,
+        match_id: rootId != null ? String(rootId) : undefined,
+        home_id: homeId != null ? String(homeId) : undefined,
+        away_id: awayId != null ? String(awayId) : undefined,
+        tournament_id: tournamentId != null ? String(tournamentId) : undefined,
       };
-      
+
       return processed;
     });
   }
